@@ -34,6 +34,11 @@ func (a *Address) parse(addr string) (err error) {
 		m = re.FindStringSubmatch(addr)
 	}
 
+	if len(m) == 0 {
+		err = errors.New("Ошибка парсинга адреса. ")
+		return
+	}
+
 	a.Zip = m[1]
 	a.House = regexp.MustCompile(`(?si)(\(.+?\)|[«»"]|,\s*\d+-й\s+этаж|,\s*\d+\s*этаж)`).ReplaceAllString(m[2], "")
 
