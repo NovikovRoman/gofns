@@ -27,7 +27,7 @@ func NewAddress(addr string) (address *Address, err error) {
 }
 
 func (a *Address) parse(addr string) (err error) {
-	re := regexp.MustCompile(`(?si)^\s*([\d]+)\s*,.+?\s*,\s*((д[.\s]|дом|корпус|стр[.\s])\s*[0-9].+?$)`)
+	re := regexp.MustCompile(`(?si)^\s*([\d]+)\s*,?.+?\s*,\s*((д[.\s]|дом|корпус|стр[.\s])\s*[0-9].+?$)`)
 	m := re.FindStringSubmatch(addr)
 	if len(m) == 0 {
 		re = regexp.MustCompile(`(?si)^\s*([\d]+)\s*,.+\s*,\s*(.+?$)`)
