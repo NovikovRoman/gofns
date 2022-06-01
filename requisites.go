@@ -49,7 +49,7 @@ type Requisites struct {
 	} `json:"sprouDetails"`
 }
 
-func GetRequisites(client *Client, regionCode int, addr string) (address *Address, requisites *Requisites, err error) {
+func (c *Client) GetRequisites(regionCode int, addr string) (address *Address, requisites *Requisites, err error) {
 	headers := map[string]string{
 		"User-Agent":    userAgent,
 		"Referer":       website + refererKladr,
@@ -58,7 +58,7 @@ func GetRequisites(client *Client, regionCode int, addr string) (address *Addres
 	}
 
 	// 1 шаг. Загрузить для установки cookie https://service.nalog.ru/addrno.do
-	if _, err = client.get(website+"/addrno.do", &headers); err != nil {
+	if _, err = c.get(website+"/addrno.do", &headers); err != nil {
 		return
 	}
 
@@ -68,13 +68,13 @@ func GetRequisites(client *Client, regionCode int, addr string) (address *Addres
 	}
 
 	// 3 шаг поиск адреса в кладр
-	if address.Kladr, err = client.searchAddrInKladr(regionCode, address.Street); err != nil {
+	if address.Kladr, err = c.searchAddrInKladr(regionCode, address.Street); err != nil {
 		return
 	}
 
 	// 4 шаг получить ОКАТО
 	var respOkato *responseOkato
-	if respOkato, err = client.getOkato(regionCode, address); err != nil {
+	if respOkato, err = c.getOkato(regionCode, address); err != nil {
 		return
 	}
 
@@ -100,7 +100,7 @@ func GetRequisites(client *Client, regionCode int, addr string) (address *Addres
 		"PreventChromeAutocomplete": {""},
 	}
 	var b []byte
-	if b, err = client.post(website+"/addrno-proc.json", data, &headers); err != nil {
+	if b, err = c.post(website+"/addrno-proc.json", data, &headers); err != nil {
 		return
 	}
 

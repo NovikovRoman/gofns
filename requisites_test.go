@@ -69,7 +69,7 @@ func TestGetRequisites(t *testing.T) {
 				addr       *Address
 				requisites *Requisites
 			)
-			addr, requisites, err = GetRequisites(client, tt.region, tt.addr)
+			addr, requisites, err = client.GetRequisites(tt.region, tt.addr)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetRequisites() error = %v, wantErr %v", err, tt.wantErr)
