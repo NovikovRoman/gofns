@@ -100,6 +100,7 @@ func (a *Address) parse(addr string) (err error) {
 	res = strings.Replace(res, "Мегино-Кангаласский район", "Мегино-Кангаласский улус", 1)
 	res = regexp.MustCompile(`(?si)К\.\s+Маркса`).ReplaceAllString(res, "Карла Маркса")
 	res = strings.Replace(res, "РСО-Алания", "", 1)
+	res = strings.Replace(res, "Р. Зорге", "Зорге", 1)
 	res = strings.Replace(res, "пос.", "поселок", 1)
 	res = strings.Replace(res, "п. Баяндай", "с. Баяндай", 1)
 	res = strings.Replace(res, "Н. Ляды", "Новые Ляды", 1)

@@ -157,17 +157,15 @@ func (c *Client) SearchAddrInKladr(regionCode int, addr *Address) (addrKladr str
 		return
 	}
 
-	switch len(r.Items) {
-	case 0:
+	if len(r.Items) == 0 {
 		err = &ErrKladrNotFound{}
-		return
-
-	case 1:
-		addrKladr = r.Items[0]
 		return
 	}
 
-	err = NewErrKladr(r.Items...)
+	addrKladr = r.Items[0]
+	if len(r.Items) > 1 {
+		err = NewErrKladr(r.Items...)
+	}
 	return
 }
 
