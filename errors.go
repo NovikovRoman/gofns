@@ -17,7 +17,7 @@ func NewErrBadArguments(msg ...string) *ErrBadArguments {
 }
 
 func (e *ErrBadArguments) Error() (msg string) {
-	msg = "Неверные аргументы"
+	msg = "Неверные аргументы."
 	if e.msg == "" {
 		return
 	}
@@ -36,7 +36,33 @@ func NewErrUnknownResponse(msg ...string) *ErrUnknownResponse {
 }
 
 func (e *ErrUnknownResponse) Error() (msg string) {
-	msg = "Неизвестный ответ"
+	msg = "Неизвестный ответ."
+	if e.msg == "" {
+		return
+	}
+	return fmt.Sprintf("%s. %s", msg, e.msg)
+}
+
+//ErrKladrNotFound адрес не найден в КЛАДР
+type ErrKladrNotFound struct{}
+
+func (e *ErrKladrNotFound) Error() (msg string) {
+	return "Адрес не найден в КЛАДР."
+}
+
+//ErrKladr найдено несколько адресов в КЛАДР
+type ErrKladr struct {
+	msg string
+}
+
+func NewErrKladr(msg ...string) *ErrKladr {
+	return &ErrKladr{
+		msg: errMoreMsgToString(msg...),
+	}
+}
+
+func (e *ErrKladr) Error() (msg string) {
+	msg = "Найдено несколько адресов в КЛАДР."
 	if e.msg == "" {
 		return
 	}

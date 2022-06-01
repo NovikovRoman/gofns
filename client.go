@@ -2,12 +2,14 @@ package gofns
 
 import (
 	"crypto/tls"
+	"encoding/json"
 	"golang.org/x/net/publicsuffix"
 	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -83,6 +85,19 @@ func (c *Client) setUserAction() error {
 	return err
 }
 
+func (c *Client) get(u string, headers *map[string]string) ([]byte, error) {
+	req, err := http.NewRequest(http.MethodGet, u, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	for k, v := range *headers {
+		req.Header.Add(k, v)
+	}
+
+	return c.request(req)
+}
+
 func (c *Client) post(urlAction string, data *url.Values, headers *map[string]string) ([]byte, error) {
 	body := data.Encode()
 	req, err := http.NewRequest(http.MethodPost, urlAction, strings.NewReader(body))
@@ -110,5 +125,94 @@ func (c *Client) request(req *http.Request) (body []byte, err error) {
 	}()
 
 	body, err = ioutil.ReadAll(resp.Body)
+	return
+}
+
+func (c *Client) searchAddrInKladr(regionCode int, addr string) (addrKladr string, err error) {
+	headers := map[string]string{
+		"User-Agent":       userAgent,
+		"Referer":          website + refererKladr,
+		"Cache-Control":    "no-cache",
+		"Pragma":           "no-cache",
+		"X-Requested-With": "XMLHttpRequest",
+	}
+
+	data := &url.Values{
+		"region":      {strconv.Itoa(regionCode)},
+		"text":        {addr},
+		"searchCount": {"1"},
+	}
+
+	var b []byte
+	if b, err = c.post(website+"/static/kladr-edit.json?c=context_search", data, &headers); err != nil {
+		return
+	}
+
+	type response struct {
+		Items []string `json:"items"`
+	}
+
+	var r *response
+	if err = json.Unmarshal(b, &r); err != nil {
+		return
+	}
+
+	switch len(r.Items) {
+	case 0:
+		err = &ErrKladrNotFound{}
+		return
+
+	case 1:
+		addrKladr = r.Items[0]
+		return
+	}
+
+	err = NewErrKladr(r.Items...)
+	return
+}
+
+type responseOkato struct {
+	Code         string `json:"code"`
+	Ifns         string `json:"ifns"`
+	Okato        string `json:"okatom"`
+	AddressKladr string `json:"text"`
+	Zip          string `json:"zip"`
+}
+
+func (c *Client) getOkato(regionCode int, address *Address) (r *responseOkato, err error) {
+	headers := map[string]string{
+		"User-Agent":       userAgent,
+		"Referer":          website + refererKladr,
+		"Cache-Control":    "no-cache",
+		"Pragma":           "no-cache",
+		"X-Requested-With": "XMLHttpRequest",
+	}
+
+	data := &url.Values{
+		"c":                         {"complete"},
+		"flags":                     {"1211"},
+		"zip":                       {""},
+		"region":                    {strconv.Itoa(regionCode)},
+		"addr":                      {address.Kladr},
+		"houseGeonim":               {"ДОМ"},
+		"house":                     {address.House},
+		"buildingGeonim":            {"К"}, // К - корпус, ЛИТЕР - литера, СООРУЖЕНИЕ - сооружение, СТР - строение
+		"building":                  {address.Housing},
+		"flatGeonim":                {"ПОМЕЩЕНИЕ"}, // КВ - квартира, КОМНАТА - комната, ПОМЕЩЕНИЕ - помещение, ОФИС - офис
+		"flat":                      {address.Room},
+		"PreventChromeAutocomplete": {""},
+	}
+
+	if address.Building != "" {
+		data.Set("buildingGeonim", "СТР")
+		data.Set("building", address.Building)
+	}
+
+	var b []byte
+	if b, err = c.post(website+"/static/kladr-edit.json", data, &headers); err != nil {
+		return
+	}
+
+	err = json.Unmarshal(b, &r)
 	return
 }
