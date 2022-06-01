@@ -68,7 +68,7 @@ func (c *Client) GetRequisites(regionCode int, addr string) (address *Address, r
 	}
 
 	// 3 шаг поиск адреса в кладр
-	if address.Kladr, err = c.searchAddrInKladr(regionCode, address.Street); err != nil {
+	if address.Kladr, err = c.SearchAddrInKladr(regionCode, address); err != nil {
 		return
 	}
 

@@ -128,7 +128,7 @@ func (c *Client) request(req *http.Request) (body []byte, err error) {
 	return
 }
 
-func (c *Client) SearchAddrInKladr(regionCode int, addr string) (addrKladr string, err error) {
+func (c *Client) SearchAddrInKladr(regionCode int, addr *Address) (addrKladr string, err error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
 		"Referer":          website + refererKladr,
@@ -139,7 +139,7 @@ func (c *Client) SearchAddrInKladr(regionCode int, addr string) (addrKladr strin
 
 	data := &url.Values{
 		"region":      {strconv.Itoa(regionCode)},
-		"text":        {addr},
+		"text":        {addr.Street},
 		"searchCount": {"1"},
 	}
 
