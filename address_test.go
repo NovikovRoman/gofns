@@ -227,6 +227,16 @@ func TestNewAddress(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			addr: &Address{
+				Source: "671050, Республика Бурятия, с. Иволгинск ул. Ленина д. 17 (2 этаж)",
+				Zip:    "671050",
+				Region: "Республика Бурятия",
+				Street: "с. Иволгинск ул. Ленина",
+				House:  "17",
+			},
+			wantErr: false,
+		},
 	}
 
 	for _, tt := range tests {
