@@ -22,35 +22,25 @@ func NewAddress(addr string) (address *Address, err error) {
 	address = &Address{
 		Source: addr,
 	}
-	err = address.parse(addr)
+	err = address.parse()
 	return
 }
 
-func (a *Address) parse(addr string) (err error) {
+func (a *Address) parse() (err error) {
 	// латиницу на кириллицу
-	addr = strings.Replace(addr, "c", "с", -1)
+	addr := strings.Replace(a.Source, "c", "с", -1)
 
-	re := regexp.MustCompile(`(?si)^\s*([\d\s]+)(\s*,?.+?[\s,]*)((д[.\s]|дом|корпус|стр[.\s])\s*[0-9]+.*?$)`)
-	m := re.FindStringSubmatch(addr)
-	if len(m) == 0 {
-		re = regexp.MustCompile(`(?si)^\s*([\d\s]+)(\s*,.+\s*,\s*)([\da-zа-яё,.\s]+$)`)
-		m = re.FindStringSubmatch(addr)
+	res := a.parseZip(addr)
+	if res == "" { // без индекса
+		if res = a.parseWithoutZip(addr); res == "" {
+			err = errors.New("Ошибка парсинга адреса. ")
+			return
+		}
 	}
-
-	if len(m) == 0 {
-		err = errors.New("Ошибка парсинга адреса. ")
-		return
-	}
-
-	a.Zip = strings.Replace(m[1], " ", "", -1)
-	a.House = regexp.MustCompile(`(?si)(\(.+?\)|[«»"]|,\s*\d+-й\s+этаж|,\s*\d+\s*этаж)`).ReplaceAllString(m[3], "")
-
-	res := strings.Replace(addr, m[1], "", 1)
-	res = strings.Replace(res, m[3], "", 1)
 
 	// литера
 	letter := ""
-	m = regexp.MustCompile(`(?si)(,|\s)\s*(литер\s|литера)(.+?)(\s|,|$)`).FindStringSubmatch(a.House)
+	m := regexp.MustCompile(`(?si)(,|\s)\s*(литер\s|литера)(.+?)(\s|,|$)`).FindStringSubmatch(a.House)
 	if len(m) > 0 {
 		letter = strings.Trim(m[3], ", ")
 		a.House = strings.Replace(a.House, m[0], "", 1)
@@ -114,13 +104,14 @@ func (a *Address) parse(addr string) (err error) {
 	if len(m) > 0 {
 		res = strings.Replace(res, m[0], m[1]+"-й", 1)
 	}
-	// Правка ул.Дзержинского - ул. Дзержинского
-	m = regexp.MustCompile(`(?si)ул\.([^\s])`).FindStringSubmatch(res)
-	if len(m) > 0 {
-		res = strings.Replace(res, m[0], "ул. "+m[1], 1)
+	// Правка ул.Дзержинского - ул. Дзержинского или г.Саратов - г. Саратов
+	mm := regexp.MustCompile(`(?si)(ул|г)\.([^\s])`).FindAllStringSubmatch(res, -1)
+	for _, item := range mm {
+		res = strings.Replace(res, item[0], item[1]+". "+item[2], 1)
 	}
 
-	res = regexp.MustCompile(`(?si)[^а-я]ул\.([^\s])`).ReplaceAllString(res, "Маркса")
+	//res = regexp.MustCompile(`(?si)[^а-я]ул\.([^\s])`).ReplaceAllString(res, "Маркса")
+	res = regexp.MustCompile(`(?si)г\.\s*о\.`).ReplaceAllString(res, "г.")
 	res = regexp.MustCompile(`(?si)К\.\s+Маркса`).ReplaceAllString(res, "Маркса")
 	res = regexp.MustCompile(`(?si)Омск-\d+`).ReplaceAllString(res, "Омск")
 	res = regexp.MustCompile(`(?si)Н[.\s]+А[.\s]+Некрасова`).ReplaceAllString(res, "Некрасова")
@@ -128,6 +119,44 @@ func (a *Address) parse(addr string) (err error) {
 
 	res = addressCorrections(res)
 	a.Street = strings.Trim(res, ", ")
+	return
+}
+
+func (a *Address) parseZip(addr string) (res string) {
+	re := regexp.MustCompile(`(?si)^\s*([\d\s]+)(\s*,?.+?[\s,]*)((д[.\s]|дом|корпус|стр[.\s])\s*[0-9]+.*?$)`)
+	m := re.FindStringSubmatch(addr)
+	if len(m) == 0 {
+		re = regexp.MustCompile(`(?si)^\s*([\d\s]+)(\s*,.+\s*,\s*)([\da-zа-яё,.\s]+$)`)
+		m = re.FindStringSubmatch(addr)
+	}
+
+	if len(m) == 0 {
+		return
+	}
+
+	a.Zip = strings.Replace(m[1], " ", "", -1)
+	a.House = regexp.MustCompile(`(?si)(\(.+?\)|[«»"]|,\s*\d+-й\s+этаж|,\s*\d+\s*этаж)`).ReplaceAllString(m[3], "")
+
+	res = strings.Replace(addr, m[1], "", 1)
+	res = strings.Replace(res, m[3], "", 1)
+	return
+}
+
+func (a *Address) parseWithoutZip(addr string) (res string) {
+	re := regexp.MustCompile(`(?si)^\s*(.+?[\s,]*)((д[.\s]|дом|корпус|стр[.\s])\s*[0-9]+.*?$)`)
+	m := re.FindStringSubmatch(addr)
+	if len(m) == 0 {
+		re = regexp.MustCompile(`(?si)^\s*(.+\s*,\s*)([\da-zа-яё,.\s]+$)`)
+		m = re.FindStringSubmatch(addr)
+	}
+
+	if len(m) == 0 {
+		return
+	}
+
+	a.Zip = ""
+	a.House = regexp.MustCompile(`(?si)(\(.+?\)|[«»"]|,\s*\d+-й\s+этаж|,\s*\d+\s*этаж)`).ReplaceAllString(m[2], "")
+	res = strings.Replace(addr, m[2], "", 1)
 	return
 }
 
@@ -148,10 +177,22 @@ var corrections = []struct {
 		old: "Н.Челны", new: "Набережные Челны",
 	},
 	{
+		old: "шоссе", new: "ш",
+	},
+	{
 		old: "Броницкая", new: "Бронницкая",
 	},
 	{
 		old: "г. Королев", new: "г. Королёв",
+	},
+	{
+		old: "Летчика", new: "Лётчика",
+	},
+	{
+		old: "III", new: "3",
+	},
+	{
+		old: "Мориса Тореза", new: "Тореза",
 	},
 	{
 		old: "г. Щелково", new: "г. Щёлково",
@@ -182,6 +223,9 @@ var corrections = []struct {
 	},
 	{
 		old: "пр-т", new: "пр-кт",
+	},
+	{
+		old: "проспект", new: "пр-кт",
 	},
 	{
 		old: "просп.", new: "пр-кт",

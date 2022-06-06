@@ -19,6 +19,10 @@ func TestDetermineRegionCodeByAddress(t *testing.T) {
 			addr:     "624460, Свердловская область, г. Краснотурьинск, ул. Ленина, д. 15",
 			wantCode: 66,
 		},
+		{
+			addr:     "600020, г. Владимир, ул. Б. Нижегородская, д. 67 А",
+			wantCode: 33,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.addr, func(t *testing.T) {
