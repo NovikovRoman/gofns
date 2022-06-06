@@ -27,10 +27,10 @@ func NewAddress(addr string) (address *Address, err error) {
 }
 
 func (a *Address) parse(addr string) (err error) {
-	re := regexp.MustCompile(`(?si)^\s*([\d]{6})\s*,?.+?[\s,]*((д[.\s]|дом|корпус|стр[.\s])\s*[0-9]+.*?$)`)
+	re := regexp.MustCompile(`(?si)^\s*([\d\s]+)\s*,?.+?[\s,]*((д[.\s]|дом|корпус|стр[.\s])\s*[0-9]+.*?$)`)
 	m := re.FindStringSubmatch(addr)
 	if len(m) == 0 {
-		re = regexp.MustCompile(`(?si)^\s*([\d]+)\s*,.+\s*,\s*(.+?$)`)
+		re = regexp.MustCompile(`(?si)^\s*([\d\s]+)\s*,.+\s*,\s*(.+?$)`)
 		m = re.FindStringSubmatch(addr)
 	}
 
@@ -39,7 +39,7 @@ func (a *Address) parse(addr string) (err error) {
 		return
 	}
 
-	a.Zip = m[1]
+	a.Zip = strings.Replace(m[1], " ", "", -1)
 	a.House = regexp.MustCompile(`(?si)(\(.+?\)|[«»"]|,\s*\d+-й\s+этаж|,\s*\d+\s*этаж)`).ReplaceAllString(m[2], "")
 
 	res := strings.Replace(addr, m[1], "", 1)
