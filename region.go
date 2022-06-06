@@ -4,71 +4,86 @@ import "regexp"
 
 func DetermineRegionCodeByAddress(addr string) (code int) {
 	// города
-	if regexp.MustCompile(`(?si)[,\s]Санкт-Петербург[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Санкт-Петербург[^а-я]`).MatchString(addr) {
 		return 78
 	}
-	if regexp.MustCompile(`(?si)[,\s]Москва[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Москва[^а-я]`).MatchString(addr) {
 		return 77
 	}
-	if regexp.MustCompile(`(?si)[,\s]абакан[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]абакан[^а-я]`).MatchString(addr) {
 		return 19
 	}
-	if regexp.MustCompile(`(?si)[,\s]Тула[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Тула[^а-я]`).MatchString(addr) {
 		return 71
 	}
-	if regexp.MustCompile(`(?si)[,\s](Нижний\s|н[\s.]*)новгород[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я](Нижний\s|н[\s.]*)новгород[^а-я]`).MatchString(addr) {
 		return 52
 	}
-	if regexp.MustCompile(`(?si)[,\s]Новосибирск[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Новосибирск[^а-я]`).MatchString(addr) {
 		return 54
 	}
-	if regexp.MustCompile(`(?si)[,\s]Екатеринбург[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Екатеринбург[^а-я]`).MatchString(addr) {
 		return 66
 	}
-	if regexp.MustCompile(`(?si)[,\s]Оренбург[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Оренбург[^а-я]`).MatchString(addr) {
 		return 56
 	}
-	if regexp.MustCompile(`(?si)[,\s]Тамбов[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Тамбов[^а-я]`).MatchString(addr) {
 		return 68
 	}
-	if regexp.MustCompile(`(?si)[,\s]Тюмень[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Тюмень[^а-я]`).MatchString(addr) {
 		return 72
 	}
-	if regexp.MustCompile(`(?si)[,\s]Ижевск[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Ижевск[^а-я]`).MatchString(addr) {
 		return 18
 	}
-	if regexp.MustCompile(`(?si)[,\s]Ульяновск[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Ульяновск[^а-я]`).MatchString(addr) {
 		return 73
 	}
-	if regexp.MustCompile(`(?si)[,\s]Хабаровск[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Хабаровск[^а-я]`).MatchString(addr) {
 		return 27
 	}
-	if regexp.MustCompile(`(?si)[,\s]Алатырь[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Алатырь[^а-я]`).MatchString(addr) {
 		return 21
 	}
-	if regexp.MustCompile(`(?si)[,\s]Новочебоксарск[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Новочебоксарск[^а-я]`).MatchString(addr) {
 		return 21
 	}
-	if regexp.MustCompile(`(?si)[,\s]Ярославль[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Ярославль[^а-я]`).MatchString(addr) {
 		return 76
 	}
-	if regexp.MustCompile(`(?si)[,\s]Сочи[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Сочи[^а-я]`).MatchString(addr) {
 		return 23
 	}
-	if regexp.MustCompile(`(?si)[,\s]Темрюк[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Темрюк[^а-я]`).MatchString(addr) {
 		return 23
 	}
-	if regexp.MustCompile(`(?si)[,\s]Владимир[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Владимир[^а-я]`).MatchString(addr) {
 		return 33
 	}
-	if regexp.MustCompile(`(?si)[,\s]Чита[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Чита[^а-я]`).MatchString(addr) {
 		return 75
 	}
-	if regexp.MustCompile(`(?si)[,\s]Оренбург[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Оренбург[^а-я]`).MatchString(addr) {
 		return 56
 	}
-	if regexp.MustCompile(`(?si)[,\s]Геленджик[^а-я]`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Геленджик[^а-я]`).MatchString(addr) {
 		return 23
+	}
+	if regexp.MustCompile(`(?si)[^а-я]Липецк[^а-я]`).MatchString(addr) {
+		return 48
+	}
+	if regexp.MustCompile(`(?si)[^а-я]Клин[^а-я]`).MatchString(addr) {
+		return 50
+	}
+	if regexp.MustCompile(`(?si)[^а-я]Химки[^а-я]`).MatchString(addr) {
+		return 50
+	}
+	if regexp.MustCompile(`(?si)[^а-я]Ростов-на-Дону[^а-я]`).MatchString(addr) {
+		return 61
+	}
+	if regexp.MustCompile(`(?si)[^а-я]Первоуральск[^а-я]`).MatchString(addr) {
+		return 66
 	}
 
 	// области
@@ -196,11 +211,17 @@ func DetermineRegionCodeByAddress(addr string) (code int) {
 	if regexp.MustCompile(`(?si)Чувашская\sРеспублик`).MatchString(addr) {
 		return 21
 	}
+	if regexp.MustCompile(`(?si)Удмуртская\sРеспублик`).MatchString(addr) {
+		return 18
+	}
 	if regexp.MustCompile(`(?si)Республик[иа]\sАлтай`).MatchString(addr) {
 		return 4
 	}
 	if regexp.MustCompile(`(?si)Республик[иа]\sХакасия`).MatchString(addr) {
 		return 19
+	}
+	if regexp.MustCompile(`(?si)Республик[иа]\sАдыгея`).MatchString(addr) {
+		return 1
 	}
 	if regexp.MustCompile(`(?si)Республик[иа]\sИнгушетия`).MatchString(addr) {
 		return 6
