@@ -68,7 +68,21 @@ func (c *Client) GetRequisites(regionCode int, addr string) (address *Address, r
 	}
 
 	// 3 шаг поиск адреса в кладр
-	if address.Kladr, err = c.SearchAddrInKladr(regionCode, address); err != nil {
+	var addressKladr *AddressKladrResponse
+	if addressKladr, err = c.SearchAddrInKladr(regionCode, address); err != nil {
+		return
+	}
+
+	switch len(addressKladr.Items) {
+	case 0:
+		err = &ErrKladrNotFound{}
+		return
+
+	case 1:
+		address.Kladr = addressKladr.Items[0]
+
+	default:
+		err = newErrKladr(addressKladr.Items...)
 		return
 	}
 

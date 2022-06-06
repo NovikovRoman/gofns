@@ -35,7 +35,7 @@ func TestNewAddress(t *testing.T) {
 				Source: "641310, Курганская область, Кетовский р-н, с. Кетово, ул. Космонавтов, д. 38",
 				Zip:    "641310",
 				Region: "Курганская область",
-				Street: "Кетовский р-н, с. Кетово, ул. Космонавтов",
+				Street: "Кетовский р-н, Кетово, ул. Космонавтов",
 				House:  "38",
 			},
 			wantErr: false,
@@ -44,7 +44,7 @@ func TestNewAddress(t *testing.T) {
 			addr: &Address{
 				Source: "627300, р. п. Голышманово, ул. Садовая, д. 84",
 				Zip:    "627300",
-				Street: "рп Голышманово, ул. Садовая",
+				Street: "Голышманово, ул. Садовая",
 				House:  "84",
 			},
 			wantErr: false,
@@ -54,7 +54,7 @@ func TestNewAddress(t *testing.T) {
 				Source: "301090, Тульская область, р.п. Чернь, ул. Маркса, д. 31",
 				Zip:    "301090",
 				Region: "Тульская область",
-				Street: "рп Чернь, ул. Маркса",
+				Street: "Чернь, ул. Маркса",
 				House:  "31",
 			},
 			wantErr: false,
@@ -112,7 +112,7 @@ func TestNewAddress(t *testing.T) {
 				Source: "625504, Тюменская область, Тюменский район, п. Боровский , ул. Островского, д. 32",
 				Zip:    "625504",
 				Region: "Тюменская область",
-				Street: "Тюменский р-н, рп Боровский , ул. Островского",
+				Street: "Тюменский р-н, Боровский , ул. Островского",
 				House:  "32",
 			},
 			wantErr: false,
@@ -121,7 +121,7 @@ func TestNewAddress(t *testing.T) {
 			addr: &Address{
 				Source: "303320, пгт. Змиевка, ул. Ленина, д. 48",
 				Zip:    "303320",
-				Street: "пгт. Змиёвка, ул. Ленина",
+				Street: "Змиёвка, ул. Ленина",
 				House:  "48",
 			},
 			wantErr: false,
@@ -190,7 +190,7 @@ func TestNewAddress(t *testing.T) {
 				Source: "668410, Республики Тыва, Каа-Хемский район, с. Сарыг-Сеп, ул. Енисейская, д. 172, кв. 6",
 				Zip:    "668410",
 				Region: "Республики Тыва",
-				Street: "Каа-Хемский р-н, с. Сарыг-Сеп, ул. Енисейская",
+				Street: "Каа-Хемский р-н, Сарыг-Сеп, ул. Енисейская",
 				House:  "172",
 				Room:   "6",
 			},
@@ -201,7 +201,7 @@ func TestNewAddress(t *testing.T) {
 				Source: "678080, Республика Саха (Якутия), Мегино-Кангаласский район, п. Нижний-Бестях, кв. Магистральный, д. 1",
 				Zip:    "678080",
 				Region: "Республика Саха (Якутия)",
-				Street: "Мегино-Кангаласский улус, п. Нижний-Бестях, кв. Магистральный",
+				Street: "Мегино-Кангаласский улус, Нижний-Бестях, кв. Магистральный",
 				House:  "1",
 			},
 			wantErr: false,
@@ -221,7 +221,7 @@ func TestNewAddress(t *testing.T) {
 				Source: "669120, Иркутская область, п. Баяндай, ул. Полевая, д. 1 кв. 3",
 				Zip:    "669120",
 				Region: "Иркутская область",
-				Street: "с. Баяндай, ул. Полевая",
+				Street: "Баяндай, ул. Полевая",
 				House:  "1",
 				Room:   "3",
 			},
@@ -232,8 +232,28 @@ func TestNewAddress(t *testing.T) {
 				Source: "671050, Республика Бурятия, с. Иволгинск ул. Ленина д. 17 (2 этаж)",
 				Zip:    "671050",
 				Region: "Республика Бурятия",
-				Street: "с. Иволгинск ул. Ленина",
+				Street: "Иволгинск ул. Ленина",
 				House:  "17",
+			},
+			wantErr: false,
+		},
+		{
+			addr: &Address{
+				Source: "352330 Краснодарский край г. Усть-Лабинск ул.Коммунистическая, д. 317",
+				Zip:    "352330",
+				Region: "Краснодарский край",
+				Street: "г. Усть-Лабинск ул.Коммунистическая",
+				House:  "317",
+			},
+			wantErr: false,
+		},
+		{
+			addr: &Address{
+				Source: "627750, Тюменская область, г. Ишим, ул. Республики, д. 1.",
+				Zip:    "627750",
+				Region: "Тюменская область",
+				Street: "г. Ишим, ул. Республики",
+				House:  "1",
 			},
 			wantErr: false,
 		},
@@ -247,6 +267,8 @@ func TestNewAddress(t *testing.T) {
 				return
 			}
 			if !reflect.DeepEqual(gotAddress, tt.addr) {
+				t.Errorf("NewAddress() gotAddress = %v, want %v", gotAddress, tt.addr)
+
 				if gotAddress.Zip != tt.addr.Zip {
 					t.Log("Zip", gotAddress.Zip, tt.addr.Zip)
 				}
@@ -268,7 +290,6 @@ func TestNewAddress(t *testing.T) {
 				if gotAddress.Room != tt.addr.Room {
 					t.Log("Room", gotAddress.Room, tt.addr.Room)
 				}
-				t.Errorf("NewAddress() gotAddress = %v, want %v", gotAddress, tt.addr)
 			}
 		})
 	}

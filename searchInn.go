@@ -8,11 +8,11 @@ import (
 
 func (c *Client) SearchInn(person *Person) (inn string, err error) {
 	if person == nil {
-		err = NewErrBadArguments("Укажите сведения о физическом лице.")
+		err = newErrBadArguments("Укажите сведения о физическом лице.")
 		return
 	}
 	if person.Document == nil {
-		err = NewErrBadArguments("Укажите документ физического лица.")
+		err = newErrBadArguments("Укажите документ физического лица.")
 		return
 	}
 
@@ -72,7 +72,7 @@ func (c *Client) SearchInn(person *Person) (inn string, err error) {
 	}
 
 	if data.Code != 0 && data.Code != 1 {
-		err = NewErrUnknownResponse(fmt.Sprintf("Код ответа не равен 0 или 1. Code: %d ", data.Code))
+		err = newErrUnknownResponse(fmt.Sprintf("Код ответа не равен 0 или 1. Code: %d ", data.Code))
 
 	} else {
 		inn = data.Inn

@@ -27,7 +27,7 @@ func NewAddress(addr string) (address *Address, err error) {
 }
 
 func (a *Address) parse(addr string) (err error) {
-	re := regexp.MustCompile(`(?si)^\s*([\d]+)\s*,?.+?[\s,]*((д[.\s]|дом|корпус|стр[.\s])\s*[0-9].+?$)`)
+	re := regexp.MustCompile(`(?si)^\s*([\d]{6})\s*,?.+?[\s,]*((д[.\s]|дом|корпус|стр[.\s])\s*[0-9]+.*?$)`)
 	m := re.FindStringSubmatch(addr)
 	if len(m) == 0 {
 		re = regexp.MustCompile(`(?si)^\s*([\d]+)\s*,.+\s*,\s*(.+?$)`)
@@ -80,10 +80,10 @@ func (a *Address) parse(addr string) (err error) {
 	}
 
 	a.House = strings.Trim(
-		regexp.MustCompile(`(?si)^(д|дом|стр)\.*`).ReplaceAllString(a.House, ""), ", ")
+		regexp.MustCompile(`(?si)^(д|дом|стр)\.*`).ReplaceAllString(a.House, ""), "., ")
 	a.House += letter
 
-	m = regexp.MustCompile(`(?si)^(.*?(область|обл\.|республика|республики|край).*?,)`).FindStringSubmatch(res)
+	m = regexp.MustCompile(`(?si)^(.*?((республика|республики).*?,|(область|обл\.|край)))`).FindStringSubmatch(res)
 	if len(m) > 0 {
 		a.Region = strings.Trim(m[1], ", ")
 		res = strings.Replace(res, m[1], "", 1)
@@ -91,10 +91,15 @@ func (a *Address) parse(addr string) (err error) {
 
 	// Н. Новгород - Нижний Новгород
 	res = regexp.MustCompile(`(?si)Н\.\s*Новгород`).ReplaceAllString(res, "Нижний Новгород")
-	// р.п. - рп
-	res = regexp.MustCompile(`(?si)р\s*\.\s*п\s*\.`).ReplaceAllString(res, "рп")
-	// п.г.т. - пгт
-	res = regexp.MustCompile(`(?si)п\s*\.\s*г\s*\.\s*т\s*\.`).ReplaceAllString(res, "пгт")
+
+	res = regexp.MustCompile(`(?si)(\sр\s*\.\s*п\s*\.|\sрп\.*|п\s*\.\s*г\s*\.\s*т\s*\.|пгт\.*|\sп\.|\sс\.|пос\.)`).
+		ReplaceAllString(res, "")
+	/*
+		// р.п. - рп
+		res = regexp.MustCompile(`(?si)р\s*\.\s*п\s*\.`).ReplaceAllString(res, "рп")
+		// п.г.т. - пгт
+		res = regexp.MustCompile(`(?si)п\s*\.\s*г\s*\.\s*т\s*\.`).ReplaceAllString(res, "пгт")
+	*/
 
 	// n мкр. - n-й мкр.
 	m = regexp.MustCompile(`(?si)(\d+)\s*мкр\.`).FindStringSubmatch(res)
@@ -102,25 +107,79 @@ func (a *Address) parse(addr string) (err error) {
 		res = strings.Replace(res, m[0], m[1]+"-й мкр.", 1)
 	}
 
-	res = strings.Replace(res, "Мегино-Кангаласский район", "Мегино-Кангаласский улус", 1)
-	res = regexp.MustCompile(`(?si)К\.\s+Маркса`).ReplaceAllString(res, "Карла Маркса")
-	res = strings.Replace(res, "РСО-Алания", "", 1)
-	res = strings.Replace(res, "Р. Зорге", "Зорге", 1)
-	res = strings.Replace(res, "пос.", "поселок", 1)
-	res = strings.Replace(res, "п. Баяндай", "с. Баяндай", 1)
-	res = strings.Replace(res, "Н. Ляды", "Новые Ляды", 1)
-	res = strings.Replace(res, "район", "р-н", 1)
-	res = strings.Replace(res, "бульвар", "б-р", 1)
-	res = strings.Replace(res, "г. о.", "город", 1)
-	res = strings.Replace(res, "Ак.", "Академика", 1)
-	res = strings.Replace(res, "М. Джалиля", "Мусы Джалиля", 1)
-	res = strings.Replace(res, ", В.О.,", ",", 1)
-	res = strings.Replace(res, "Ак.", "Академика", 1)
-	res = strings.Replace(res, "А. К. Толстого", "Толстого", 1)
-	res = strings.Replace(res, "Змиевка", "Змиёвка", 1)
-	res = strings.Replace(res, "п. Боровский", "рп Боровский", 1)
-	res = strings.Replace(res, "Эвено-Бытантайский национальный улус (район)", "", 1)
-	res = strings.Replace(res, "\"", "", 1)
+	res = regexp.MustCompile(`(?si)К\.\s+Маркса`).ReplaceAllString(res, "Маркса")
+	res = regexp.MustCompile(`(?si)Омск-\d+`).ReplaceAllString(res, "Омск")
+
+	res = addressCorrections(res)
 	a.Street = strings.Trim(res, ", ")
 	return
+}
+
+var corrections = []struct {
+	old string
+	new string
+}{
+	{
+		old: "Эвено-Бытантайский национальный улус (район)", new: "",
+	},
+	{
+		old: "Мегино-Кангаласский район", new: "Мегино-Кангаласский улус",
+	},
+	{
+		old: "РСО-Алания", new: "",
+	},
+	{
+		old: "г. Орел", new: "г. Орёл",
+	},
+	{
+		old: "Р. Зорге", new: "Зорге",
+	},
+	{
+		old: "район", new: "р-н",
+	},
+	{
+		old: "пр-т", new: "пр-кт",
+	},
+	{
+		old: "бульвар", new: "б-р",
+	},
+	{
+		old: "Самотечный", new: "Самотёчный",
+	},
+	{
+		old: "г. о.", new: "",
+	},
+	{
+		old: "Ак.", new: "Академика",
+	},
+	{
+		old: "М. Джалиля", new: "Мусы Джалиля",
+	},
+	{
+		old: "К. Мяготина", new: "Коли Мяготина",
+	},
+	{
+		old: ", В.О.,", new: ",",
+	},
+	{
+		old: "А. К. Толстого", new: "Толстого",
+	},
+	{
+		old: "Змиевка", new: "Змиёвка",
+	},
+	{
+		old: "\"", new: "",
+	},
+
+	//"п. Боровский": "рп Боровский",
+	//"г. о.": "город",
+	// "пос.": "поселок",
+	// "п. Баяндай": "с. Баяндай",
+}
+
+func addressCorrections(s string) string {
+	for _, item := range corrections {
+		s = strings.Replace(s, item.old, item.new, 1)
+	}
+	return s
 }

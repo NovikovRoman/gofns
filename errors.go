@@ -10,7 +10,7 @@ type ErrBadArguments struct {
 	msg string
 }
 
-func NewErrBadArguments(msg ...string) *ErrBadArguments {
+func newErrBadArguments(msg ...string) *ErrBadArguments {
 	return &ErrBadArguments{
 		msg: errMoreMsgToString(msg...),
 	}
@@ -21,7 +21,7 @@ func (e *ErrBadArguments) Error() (msg string) {
 	if e.msg == "" {
 		return
 	}
-	return fmt.Sprintf("%s. %s", msg, e.msg)
+	return fmt.Sprintf("%s %s", msg, e.msg)
 }
 
 //ErrUnknownResponse неизвестный ответ
@@ -29,7 +29,7 @@ type ErrUnknownResponse struct {
 	msg string
 }
 
-func NewErrUnknownResponse(msg ...string) *ErrUnknownResponse {
+func newErrUnknownResponse(msg ...string) *ErrUnknownResponse {
 	return &ErrUnknownResponse{
 		msg: errMoreMsgToString(msg...),
 	}
@@ -40,7 +40,7 @@ func (e *ErrUnknownResponse) Error() (msg string) {
 	if e.msg == "" {
 		return
 	}
-	return fmt.Sprintf("%s. %s", msg, e.msg)
+	return fmt.Sprintf("%s %s", msg, e.msg)
 }
 
 //ErrKladrNotFound адрес не найден в КЛАДР
@@ -55,7 +55,7 @@ type ErrKladr struct {
 	msg string
 }
 
-func NewErrKladr(msg ...string) *ErrKladr {
+func newErrKladr(msg ...string) *ErrKladr {
 	return &ErrKladr{
 		msg: errMoreMsgToString(msg...),
 	}
@@ -66,7 +66,26 @@ func (e *ErrKladr) Error() (msg string) {
 	if e.msg == "" {
 		return
 	}
-	return fmt.Sprintf("%s. %s", msg, e.msg)
+	return fmt.Sprintf("%s %s", msg, e.msg)
+}
+
+//ErrBadResponse много запросов
+type ErrBadResponse struct {
+	msg string
+}
+
+func newErrBadResponse(msg ...string) *ErrBadResponse {
+	return &ErrBadResponse{
+		msg: errMoreMsgToString(msg...),
+	}
+}
+
+func (e *ErrBadResponse) Error() (msg string) {
+	msg = "Ошибочный ответ."
+	if e.msg == "" {
+		return
+	}
+	return fmt.Sprintf("%s %s", msg, e.msg)
 }
 
 //ErrTooManyRequests много запросов

@@ -3,6 +3,7 @@ package gofns
 import (
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"golang.org/x/net/publicsuffix"
 	"io/ioutil"
 	"net/http"
@@ -16,7 +17,7 @@ import (
 
 const (
 	website          = "https://service.nalog.ru"
-	userAgent        = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:65.0) Gecko/20100101 Firefox/65.0"
+	userAgent        = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.61 Safari/537.36"
 	timeout          = time.Second * 60
 	handshakeTimeout = time.Second * 10
 )
@@ -128,7 +129,53 @@ func (c *Client) request(req *http.Request) (body []byte, err error) {
 	return
 }
 
-func (c *Client) SearchAddrInKladr(regionCode int, addr *Address) (addrKladr string, err error) {
+type AddressKladrResponse struct {
+	Items   []string `json:"items,omitempty"`
+	Error   string   `json:"ERROR"`
+	Status  int      `json:"STATUS"`
+	Content []byte   `json:"-"`
+}
+
+//SearchRegionCodeByIndex поиск кода региона по почтовому индексу.
+func (c *Client) SearchRegionCodeByIndex(index string) (code int, err error) {
+	headers := map[string]string{
+		"User-Agent":       userAgent,
+		"Referer":          website + refererKladr,
+		"Cache-Control":    "no-cache",
+		"Pragma":           "no-cache",
+		"X-Requested-With": "XMLHttpRequest",
+		"Accept-Encoding":  "gzip, deflate, br",
+	}
+
+	data := &url.Values{
+		"c":   {"getRegionByZip"},
+		"zip": {index},
+	}
+
+	var b []byte
+	if b, err = c.post(website+"/static/kladr-edit.json", data, &headers); err != nil {
+		err = newErrBadResponse(err.Error())
+		return
+	}
+
+	if len(b) == 4 && string(b) == "null" {
+		return
+	}
+
+	var resp struct {
+		Region string `json:"REGION"`
+	}
+
+	if err = json.Unmarshal(b, &resp); err != nil {
+		return
+	}
+
+	code, err = strconv.Atoi(resp.Region)
+	return
+}
+
+//SearchAddrInKladr поиск адреса в КЛАДР.
+func (c *Client) SearchAddrInKladr(regionCode int, addr *Address) (addrKladrResponse *AddressKladrResponse, err error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
 		"Referer":          website + refererKladr,
@@ -138,34 +185,25 @@ func (c *Client) SearchAddrInKladr(regionCode int, addr *Address) (addrKladr str
 	}
 
 	data := &url.Values{
-		"region":      {strconv.Itoa(regionCode)},
+		"region":      {fmt.Sprintf("%02d", regionCode)},
 		"text":        {addr.Street},
 		"searchCount": {"1"},
 	}
 
 	var b []byte
 	if b, err = c.post(website+"/static/kladr-edit.json?c=context_search", data, &headers); err != nil {
+		err = newErrBadResponse(err.Error())
 		return
 	}
 
-	type response struct {
-		Items []string `json:"items"`
-	}
-
-	var r *response
-	if err = json.Unmarshal(b, &r); err != nil {
+	if err = json.Unmarshal(b, &addrKladrResponse); err != nil {
 		return
 	}
 
-	if len(r.Items) == 0 {
-		err = &ErrKladrNotFound{}
-		return
+	if addrKladrResponse.Error != "" {
+		err = newErrBadResponse(addrKladrResponse.Error)
 	}
 
-	addrKladr = r.Items[0]
-	if len(r.Items) > 1 {
-		err = NewErrKladr(r.Items...)
-	}
 	return
 }
 
