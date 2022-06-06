@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestNewAddress(t *testing.T) {
+func TestAddress_NewAddress(t *testing.T) {
 	tests := []struct {
 		addr    *Address
 		wantErr bool
@@ -242,7 +242,7 @@ func TestNewAddress(t *testing.T) {
 				Source: "352330 Краснодарский край г. Усть-Лабинск ул.Коммунистическая, д. 317",
 				Zip:    "352330",
 				Region: "Краснодарский край",
-				Street: "г. Усть-Лабинск ул.Коммунистическая",
+				Street: "г. Усть-Лабинск ул. Коммунистическая",
 				House:  "317",
 			},
 			wantErr: false,
@@ -266,8 +266,22 @@ func TestNewAddress(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			addr: &Address{
+				Source: "659520, c. Солтон, ул. Ленина, д. 15",
+				Zip:    "659520",
+				Street: "Солтон, ул. Ленина",
+				House:  "15",
+			},
+			wantErr: false,
+		},
+		{
+			addr: &Address{
+				Source: "140127, Московская область, п. Гжелка (здание ДК)",
+			},
+			wantErr: true,
+		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.addr.Source, func(t *testing.T) {
 			gotAddress, err := NewAddress(tt.addr.Source)

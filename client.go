@@ -3,6 +3,7 @@ package gofns
 import (
 	"crypto/tls"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"golang.org/x/net/publicsuffix"
 	"io/ioutil"
@@ -118,6 +119,11 @@ func (c *Client) post(urlAction string, data *url.Values, headers *map[string]st
 func (c *Client) request(req *http.Request) (body []byte, err error) {
 	var resp *http.Response
 	if resp, err = c.httpClient.Do(req); err != nil {
+		return
+	}
+
+	if resp == nil {
+		err = errors.New("Response is nil. ")
 		return
 	}
 

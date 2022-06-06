@@ -27,10 +27,13 @@ func NewAddress(addr string) (address *Address, err error) {
 }
 
 func (a *Address) parse(addr string) (err error) {
-	re := regexp.MustCompile(`(?si)^\s*([\d\s]+)\s*,?.+?[\s,]*((д[.\s]|дом|корпус|стр[.\s])\s*[0-9]+.*?$)`)
+	// латиницу на кириллицу
+	addr = strings.Replace(addr, "c", "с", -1)
+
+	re := regexp.MustCompile(`(?si)^\s*([\d\s]+)(\s*,?.+?[\s,]*)((д[.\s]|дом|корпус|стр[.\s])\s*[0-9]+.*?$)`)
 	m := re.FindStringSubmatch(addr)
 	if len(m) == 0 {
-		re = regexp.MustCompile(`(?si)^\s*([\d\s]+)\s*,.+\s*,\s*(.+?$)`)
+		re = regexp.MustCompile(`(?si)^\s*([\d\s]+)(\s*,.+\s*,\s*)([\da-zа-яё,.\s]+$)`)
 		m = re.FindStringSubmatch(addr)
 	}
 
@@ -40,10 +43,10 @@ func (a *Address) parse(addr string) (err error) {
 	}
 
 	a.Zip = strings.Replace(m[1], " ", "", -1)
-	a.House = regexp.MustCompile(`(?si)(\(.+?\)|[«»"]|,\s*\d+-й\s+этаж|,\s*\d+\s*этаж)`).ReplaceAllString(m[2], "")
+	a.House = regexp.MustCompile(`(?si)(\(.+?\)|[«»"]|,\s*\d+-й\s+этаж|,\s*\d+\s*этаж)`).ReplaceAllString(m[3], "")
 
 	res := strings.Replace(addr, m[1], "", 1)
-	res = strings.Replace(res, m[2], "", 1)
+	res = strings.Replace(res, m[3], "", 1)
 
 	// литера
 	letter := ""
@@ -106,9 +109,22 @@ func (a *Address) parse(addr string) (err error) {
 	if len(m) > 0 {
 		res = strings.Replace(res, m[0], m[1]+"-й мкр.", 1)
 	}
+	// n-ой - n-й
+	m = regexp.MustCompile(`(?si)(\d+)-ой`).FindStringSubmatch(res)
+	if len(m) > 0 {
+		res = strings.Replace(res, m[0], m[1]+"-й", 1)
+	}
+	// Правка ул.Дзержинского - ул. Дзержинского
+	m = regexp.MustCompile(`(?si)ул\.([^\s])`).FindStringSubmatch(res)
+	if len(m) > 0 {
+		res = strings.Replace(res, m[0], "ул. "+m[1], 1)
+	}
 
+	res = regexp.MustCompile(`(?si)[^а-я]ул\.([^\s])`).ReplaceAllString(res, "Маркса")
 	res = regexp.MustCompile(`(?si)К\.\s+Маркса`).ReplaceAllString(res, "Маркса")
 	res = regexp.MustCompile(`(?si)Омск-\d+`).ReplaceAllString(res, "Омск")
+	res = regexp.MustCompile(`(?si)Н[.\s]+А[.\s]+Некрасова`).ReplaceAllString(res, "Некрасова")
+	res = regexp.MustCompile(`(?si)Щёлково-\d+`).ReplaceAllString(res, "Щёлково")
 
 	res = addressCorrections(res)
 	a.Street = strings.Trim(res, ", ")
@@ -129,16 +145,43 @@ var corrections = []struct {
 		old: "РСО-Алания", new: "",
 	},
 	{
+		old: "Броницкая", new: "Бронницкая",
+	},
+	{
+		old: "г. Королев", new: "г. Королёв",
+	},
+	{
+		old: "г. Щелково", new: "г. Щёлково",
+	},
+	{
+		old: "улица", new: "ул.",
+	},
+	{
+		old: "Ликино-Дулево", new: "Ликино-Дулёво",
+	},
+	{
 		old: "г. Орел", new: "г. Орёл",
 	},
 	{
 		old: "Р. Зорге", new: "Зорге",
 	},
 	{
+		old: "Зеленая", new: "Зелёная",
+	},
+	{
+		old: "мкр-н", new: "мкр",
+	},
+	{
 		old: "район", new: "р-н",
 	},
 	{
+		old: "р-он", new: "р-н",
+	},
+	{
 		old: "пр-т", new: "пр-кт",
+	},
+	{
+		old: "просп.", new: "пр-кт",
 	},
 	{
 		old: "бульвар", new: "б-р",
