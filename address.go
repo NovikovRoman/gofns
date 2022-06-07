@@ -76,7 +76,7 @@ func (a *Address) parse() (err error) {
 		regexp.MustCompile(`(?si)^(д|дом|стр)\.*`).ReplaceAllString(a.House, ""), "., ")
 	a.House += letter
 
-	m = regexp.MustCompile(`(?si)^(.*?((республика|республики).*?,|(область|обл\.|край)))`).FindStringSubmatch(res)
+	m = regexp.MustCompile(`(?si)^(.*?((республика|республики|РСО-Алания).*?,|(область|обл\.|край|округ)))`).FindStringSubmatch(res)
 	if len(m) > 0 {
 		a.Region = strings.Trim(m[1], ", ")
 		res = strings.Replace(res, m[1], "", 1)
@@ -87,12 +87,6 @@ func (a *Address) parse() (err error) {
 
 	res = regexp.MustCompile(`(?si)(\sр\s*\.\s*п\s*\.|\sрп\.*|п\s*\.\s*г\s*\.\s*т\s*\.|пгт\.*|\sп\.|\sс\.|пос\.)`).
 		ReplaceAllString(res, "")
-	/*
-		// р.п. - рп
-		res = regexp.MustCompile(`(?si)р\s*\.\s*п\s*\.`).ReplaceAllString(res, "рп")
-		// п.г.т. - пгт
-		res = regexp.MustCompile(`(?si)п\s*\.\s*г\s*\.\s*т\s*\.`).ReplaceAllString(res, "пгт")
-	*/
 
 	// n мкр. - n-й мкр.
 	m = regexp.MustCompile(`(?si)(\d+)\s*мкр\.`).FindStringSubmatch(res)
@@ -104,13 +98,18 @@ func (a *Address) parse() (err error) {
 	if len(m) > 0 {
 		res = strings.Replace(res, m[0], m[1]+"-й", 1)
 	}
+	// -го
+	m = regexp.MustCompile(`(?si)(\d+)-го[^а-яё]`).FindStringSubmatch(res)
+	if len(m) > 0 {
+		res = strings.Replace(res, m[0], m[1]+" ", 1)
+	}
 	// Правка ул.Дзержинского - ул. Дзержинского или г.Саратов - г. Саратов
 	mm := regexp.MustCompile(`(?si)(ул|г)\.([^\s])`).FindAllStringSubmatch(res, -1)
 	for _, item := range mm {
 		res = strings.Replace(res, item[0], item[1]+". "+item[2], 1)
 	}
 
-	//res = regexp.MustCompile(`(?si)[^а-я]ул\.([^\s])`).ReplaceAllString(res, "Маркса")
+	res = regexp.MustCompile(`(?si)Бульвар`).ReplaceAllString(res, "б-р")
 	res = regexp.MustCompile(`(?si)г\.\s*о\.`).ReplaceAllString(res, "г.")
 	res = regexp.MustCompile(`(?si)К\.\s+Маркса`).ReplaceAllString(res, "Маркса")
 	res = regexp.MustCompile(`(?si)Омск-\d+`).ReplaceAllString(res, "Омск")
@@ -171,7 +170,7 @@ var corrections = []struct {
 		old: "Мегино-Кангаласский район", new: "Мегино-Кангаласский улус",
 	},
 	{
-		old: "РСО-Алания", new: "",
+		old: "В. Устюг", new: "Великий Устюг",
 	},
 	{
 		old: "Н.Челны", new: "Набережные Челны",
@@ -229,9 +228,6 @@ var corrections = []struct {
 	},
 	{
 		old: "просп.", new: "пр-кт",
-	},
-	{
-		old: "бульвар", new: "б-р",
 	},
 	{
 		old: "Самотечный", new: "Самотёчный",
