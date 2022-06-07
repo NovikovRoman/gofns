@@ -73,10 +73,10 @@ func (a *Address) parse() (err error) {
 	}
 
 	a.House = strings.Trim(
-		regexp.MustCompile(`(?si)^(д|дом|стр)\.*`).ReplaceAllString(a.House, ""), "., ")
+		regexp.MustCompile(`(?si)^(дом|стр|д)\.*`).ReplaceAllString(a.House, ""), "., ")
 	a.House += letter
 
-	m = regexp.MustCompile(`(?si)^(.*?((республика|республики|РСО-Алания).*?,|(область|обл\.|край|округ)))`).FindStringSubmatch(res)
+	m = regexp.MustCompile(`(?si)^(.*?((республика|республики|РСО-Алания).*?,|(области|область|обл\.|край|округ)))`).FindStringSubmatch(res)
 	if len(m) > 0 {
 		a.Region = strings.Trim(m[1], ", ")
 		res = strings.Replace(res, m[1], "", 1)
@@ -111,10 +111,13 @@ func (a *Address) parse() (err error) {
 
 	res = regexp.MustCompile(`(?si)Бульвар`).ReplaceAllString(res, "б-р")
 	res = regexp.MustCompile(`(?si)г\.\s*о\.`).ReplaceAllString(res, "г.")
-	res = regexp.MustCompile(`(?si)К\.\s+Маркса`).ReplaceAllString(res, "Маркса")
+	res = regexp.MustCompile(`(?si)(К\.|Карла)\s*Маркса`).ReplaceAllString(res, "Маркса")
 	res = regexp.MustCompile(`(?si)Омск-\d+`).ReplaceAllString(res, "Омск")
 	res = regexp.MustCompile(`(?si)Н[.\s]+А[.\s]+Некрасова`).ReplaceAllString(res, "Некрасова")
 	res = regexp.MustCompile(`(?si)Щёлково-\d+`).ReplaceAllString(res, "Щёлково")
+	res = regexp.MustCompile(`(?si)(мкр-н|мкрн|микрорайон)[^а-я]`).ReplaceAllString(res, "мкр")
+	res = regexp.MustCompile(`(?si)(пр-т|проспект|просп)[^а-я]`).ReplaceAllString(res, "пр-кт")
+	res = regexp.MustCompile(`(?si)(район|р-он)[^а-я]`).ReplaceAllString(res, "р-н")
 
 	res = addressCorrections(res)
 	a.Street = strings.Trim(res, ", ")
@@ -176,6 +179,18 @@ var corrections = []struct {
 		old: "Н.Челны", new: "Набережные Челны",
 	},
 	{
+		old: "Сундуй Андрея", new: "Сундуй Андрей",
+	},
+	{
+		old: "улус", new: "у",
+	},
+	{
+		old: "К. Цеткин", new: "Цеткин",
+	},
+	{
+		old: "пр-д", new: "проезд",
+	},
+	{
 		old: "шоссе", new: "ш",
 	},
 	{
@@ -212,28 +227,13 @@ var corrections = []struct {
 		old: "Зеленая", new: "Зелёная",
 	},
 	{
-		old: "мкр-н", new: "мкр",
-	},
-	{
-		old: "район", new: "р-н",
-	},
-	{
-		old: "р-он", new: "р-н",
-	},
-	{
-		old: "пр-т", new: "пр-кт",
-	},
-	{
-		old: "проспект", new: "пр-кт",
-	},
-	{
-		old: "просп.", new: "пр-кт",
-	},
-	{
 		old: "Самотечный", new: "Самотёчный",
 	},
 	{
 		old: "г. о.", new: "",
+	},
+	{
+		old: "гор.", new: "",
 	},
 	{
 		old: "Ак.", new: "Академика",
