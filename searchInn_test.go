@@ -23,7 +23,7 @@ func TestClient_SearchInn(t *testing.T) {
 	passport, err = NewDocument(os.Getenv("PERSON_PASSPORT"), DocumentPassportRussia, nil)
 	require.Nil(t, err)
 
-	birtday, err = time.Parse(LayoutDate, os.Getenv("PERSON_SECONDNAME"))
+	birtday, err = time.Parse(LayoutDate, os.Getenv("PERSON_BIRTHDAY"))
 	require.Nil(t, err)
 
 	owner := &Person{

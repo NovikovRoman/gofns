@@ -9,7 +9,7 @@ func TestDetermineRegionCodeByAddress(t *testing.T) {
 	}{
 		{
 			addr:     "668410, Республики Тыва, Каа-Хемский район, с. Сарыг-Сеп, ул. Енисейская, д. 172, кв. 6",
-			wantCode: 14,
+			wantCode: 17,
 		},
 		{
 			addr:     "353520, г. Темрюк, ул. Таманская, д. 25",
