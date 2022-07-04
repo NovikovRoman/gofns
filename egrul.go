@@ -2,7 +2,6 @@ package gofns
 
 import (
 	"encoding/json"
-	"errors"
 	"net/url"
 	"strconv"
 	"time"
@@ -14,6 +13,18 @@ const (
 	LegalEntity      = "ul"
 	IndividualEntity = "fl"
 )
+
+type CaptchaRequiredError struct {
+	data string
+}
+
+func newCaptchaRequiredError(data string) (c *CaptchaRequiredError) {
+	return &CaptchaRequiredError{data: data}
+}
+
+func (e *CaptchaRequiredError) Error() string {
+	return "Captcha required. " + e.data
+}
 
 type Egrul struct {
 	Company         string    `json:"c"`
@@ -64,7 +75,7 @@ func (c *Client) EgrulByInn(inn string) (egruls []*Egrul, err error) {
 	}
 
 	if respToken.CaptchaRequired {
-		err = errors.New("Требует капчу. " + string(b))
+		err = newCaptchaRequiredError(string(b))
 		return
 	}
 
