@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"golang.org/x/net/publicsuffix"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -17,7 +18,7 @@ import (
 )
 
 const (
-	website          = "https://service.nalog.ru"
+	serviceNalogUrl  = "https://service.nalog.ru"
 	userAgent        = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.61 Safari/537.36"
 	timeout          = time.Second * 60
 	handshakeTimeout = time.Second * 10
@@ -57,7 +58,7 @@ func (c *Client) isUserActionRequired() (isAuthorize bool, err error) {
 		body []byte
 	)
 	isAuthorize = false
-	req, _ = http.NewRequest(http.MethodGet, website+"/inn.do", nil)
+	req, _ = http.NewRequest(http.MethodGet, serviceNalogUrl+"/inn.do", nil)
 
 	body, err = c.request(req)
 	if err != nil {
@@ -71,7 +72,7 @@ func (c *Client) isUserActionRequired() (isAuthorize bool, err error) {
 }
 
 func (c *Client) setUserAction() error {
-	u := website + "/static/personal-data-proc.json"
+	u := serviceNalogUrl + "/static/personal-data-proc.json"
 	data := &url.Values{
 		"from":         {"/inn.do"},
 		"svc":          {"inn"},
@@ -146,7 +147,7 @@ type AddressKladrResponse struct {
 func (c *Client) SearchRegionCodeByIndex(index string) (code int, err error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
-		"Referer":          website + refererKladr,
+		"Referer":          serviceNalogUrl + refererKladr,
 		"Cache-Control":    "no-cache",
 		"Pragma":           "no-cache",
 		"X-Requested-With": "XMLHttpRequest",
@@ -159,7 +160,7 @@ func (c *Client) SearchRegionCodeByIndex(index string) (code int, err error) {
 	}
 
 	var b []byte
-	if b, err = c.post(website+"/static/kladr-edit.json", data, &headers); err != nil {
+	if b, err = c.post(serviceNalogUrl+"/static/kladr-edit.json", data, &headers); err != nil {
 		err = newErrBadResponse(err.Error())
 		return
 	}
@@ -184,7 +185,7 @@ func (c *Client) SearchRegionCodeByIndex(index string) (code int, err error) {
 func (c *Client) SearchAddrInKladr(regionCode int, addr *Address) (addrKladrResponse *AddressKladrResponse, err error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
-		"Referer":          website + refererKladr,
+		"Referer":          serviceNalogUrl + refererKladr,
 		"Cache-Control":    "no-cache",
 		"Pragma":           "no-cache",
 		"X-Requested-With": "XMLHttpRequest",
@@ -197,12 +198,19 @@ func (c *Client) SearchAddrInKladr(regionCode int, addr *Address) (addrKladrResp
 	}
 
 	var b []byte
-	if b, err = c.post(website+"/static/kladr-edit.json?c=context_search", data, &headers); err != nil {
+	if b, err = c.post(serviceNalogUrl+"/static/kladr-edit.json?c=context_search", data, &headers); err != nil {
 		err = newErrBadResponse(err.Error())
 		return
 	}
 
 	if err = json.Unmarshal(b, &addrKladrResponse); err != nil {
+		return
+	}
+
+	if addrKladrResponse == nil {
+		// fixme
+		err = newErrBadResponse("Response content: null")
+		log.Println(string(b), "Region", regionCode, addr.Source, addr.Street)
 		return
 	}
 
@@ -224,7 +232,7 @@ type responseOkato struct {
 func (c *Client) getOkato(regionCode int, address *Address) (r *responseOkato, err error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
-		"Referer":          website + refererKladr,
+		"Referer":          serviceNalogUrl + refererKladr,
 		"Cache-Control":    "no-cache",
 		"Pragma":           "no-cache",
 		"X-Requested-With": "XMLHttpRequest",
@@ -251,7 +259,7 @@ func (c *Client) getOkato(regionCode int, address *Address) (r *responseOkato, e
 	}
 
 	var b []byte
-	if b, err = c.post(website+"/static/kladr-edit.json", data, &headers); err != nil {
+	if b, err = c.post(serviceNalogUrl+"/static/kladr-edit.json", data, &headers); err != nil {
 		return
 	}
 

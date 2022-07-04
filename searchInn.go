@@ -53,7 +53,7 @@ func (c *Client) SearchInn(person *Person) (inn string, err error) {
 	}
 
 	var b []byte
-	if b, err = c.post(website+"/inn-proc.do", params, headers); err != nil {
+	if b, err = c.post(serviceNalogUrl+"/inn-proc.do", params, headers); err != nil {
 		return
 	}
 

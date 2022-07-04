@@ -52,13 +52,13 @@ type Requisites struct {
 func (c *Client) GetRequisites(regionCode int, addr string) (address *Address, requisites *Requisites, err error) {
 	headers := map[string]string{
 		"User-Agent":    userAgent,
-		"Referer":       website + refererKladr,
+		"Referer":       serviceNalogUrl + refererKladr,
 		"Cache-Control": "no-cache",
 		"Pragma":        "no-cache",
 	}
 
 	// 1 шаг. Загрузить для установки cookie https://service.nalog.ru/addrno.do
-	if _, err = c.get(website+"/addrno.do", &headers); err != nil {
+	if _, err = c.get(serviceNalogUrl+"/addrno.do", &headers); err != nil {
 		return
 	}
 
@@ -95,7 +95,7 @@ func (c *Client) GetRequisites(regionCode int, addr string) (address *Address, r
 	// 5 шаг получить реквизиты
 	headers = map[string]string{
 		"User-Agent":       userAgent,
-		"Referer":          website + refererKladr,
+		"Referer":          serviceNalogUrl + refererKladr,
 		"Cache-Control":    "no-cache",
 		"Pragma":           "no-cache",
 		"X-Requested-With": "XMLHttpRequest",
@@ -114,7 +114,7 @@ func (c *Client) GetRequisites(regionCode int, addr string) (address *Address, r
 		"PreventChromeAutocomplete": {""},
 	}
 	var b []byte
-	if b, err = c.post(website+"/addrno-proc.json", data, &headers); err != nil {
+	if b, err = c.post(serviceNalogUrl+"/addrno-proc.json", data, &headers); err != nil {
 		return
 	}
 
