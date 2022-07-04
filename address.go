@@ -75,7 +75,6 @@ func (a *Address) parse() (err error) {
 		regexp.MustCompile(`(?si)^(дом|стр|д)\.*`).ReplaceAllString(a.House, ""), "., ")
 	a.House += letter
 
-
 	m = regexp.MustCompile(`(?si)^(.*?((республика(\s*,|[^а-я].*?,)|республики.*?,|РСО-Алания)|(области|область|обл\.|край|округ|ЕАО)[\s,]))`).FindStringSubmatch(res)
 	if len(m) > 0 {
 		a.Region = strings.Trim(m[1], ", ")
@@ -115,6 +114,11 @@ func (a *Address) parse() (err error) {
 	mm = regexp.MustCompile(`(?si)(район|р-он)([^а-я])`).FindAllStringSubmatch(res, -1)
 	for _, item := range mm {
 		res = strings.Replace(res, item[0], "р-н"+item[2], 1)
+	}
+	// бульвар
+	mm = regexp.MustCompile(`(?si)бульвар([^а-я])`).FindAllStringSubmatch(res, -1)
+	for _, item := range mm {
+		res = strings.Replace(res, item[0], "б-р"+item[1], 1)
 	}
 	// проспект
 	mm = regexp.MustCompile(`(?si)(пр-т|проспект|просп|пр\.)([^а-я])`).FindAllStringSubmatch(res, -1)
