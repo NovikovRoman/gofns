@@ -45,3 +45,13 @@ if err != nil {
 
 fmt.Println(inn)
 ```
+
+## Поиск информации из ЕГРЮЛ/ЕГРИП
+
+```go
+res, err := client.EgrulByInn("2130008501")
+if err != nil {
+    log.Fatalln(err)
+}
+fmt.Println(res)
+```

@@ -58,19 +58,19 @@ type document struct {
 	date         *time.Time
 }
 
-func (d document) String() string {
+func (d *document) String() string {
 	return d.number
 }
 
-func (d document) Type() string {
+func (d *document) Type() string {
 	return d.documentType
 }
 
-func (d document) DateIssue() time.Time {
+func (d *document) DateIssue() time.Time {
 	return *d.date
 }
 
-func (d document) DateIssueString() string {
+func (d *document) DateIssueString() string {
 	if d.date == nil {
 		return ""
 	}

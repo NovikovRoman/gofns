@@ -5,9 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"golang.org/x/net/publicsuffix"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -15,6 +13,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"golang.org/x/net/publicsuffix"
 )
 
 const (
@@ -25,8 +25,7 @@ const (
 )
 
 type Client struct {
-	redirectUrl string
-	httpClient  *http.Client
+	httpClient *http.Client
 }
 
 func NewClient(transport *http.Transport) (c *Client, err error) {
@@ -208,9 +207,7 @@ func (c *Client) SearchAddrInKladr(regionCode int, addr *Address) (addrKladrResp
 	}
 
 	if addrKladrResponse == nil {
-		// fixme
 		err = newErrBadResponse("Response content: null")
-		log.Println(string(b), "Region", regionCode, addr.Source, addr.Street)
 		return
 	}
 
@@ -239,16 +236,18 @@ func (c *Client) getOkato(regionCode int, address *Address) (r *responseOkato, e
 	}
 
 	data := &url.Values{
-		"c":                         {"complete"},
-		"flags":                     {"1211"},
-		"zip":                       {""},
-		"region":                    {strconv.Itoa(regionCode)},
-		"addr":                      {address.Kladr},
-		"houseGeonim":               {"ДОМ"},
-		"house":                     {address.House},
-		"buildingGeonim":            {"К"}, // К - корпус, ЛИТЕР - литера, СООРУЖЕНИЕ - сооружение, СТР - строение
-		"building":                  {address.Housing},
-		"flatGeonim":                {"ПОМЕЩЕНИЕ"}, // КВ - квартира, КОМНАТА - комната, ПОМЕЩЕНИЕ - помещение, ОФИС - офис
+		"c":           {"complete"},
+		"flags":       {"1211"},
+		"zip":         {""},
+		"region":      {strconv.Itoa(regionCode)},
+		"addr":        {address.Kladr},
+		"houseGeonim": {"ДОМ"},
+		"house":       {address.House},
+		// К - корпус, ЛИТЕР - литера, СООРУЖЕНИЕ - сооружение, СТР - строение
+		"buildingGeonim": {"К"},
+		"building":       {address.Housing},
+		// КВ - квартира, КОМНАТА - комната, ПОМЕЩЕНИЕ - помещение, ОФИС - офис
+		"flatGeonim":                {"ПОМЕЩЕНИЕ"},
 		"flat":                      {address.Room},
 		"PreventChromeAutocomplete": {""},
 	}
