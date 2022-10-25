@@ -1,6 +1,7 @@
 package gofns
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -8,7 +9,7 @@ import (
 	"time"
 )
 
-func (c *Client) SearchInn(person *Person) (inn string, err error) {
+func (c *Client) SearchInn(ctx context.Context, person *Person) (inn string, err error) {
 	if person == nil {
 		err = newErrBadArguments("Укажите сведения о физическом лице.")
 		return
@@ -19,8 +20,8 @@ func (c *Client) SearchInn(person *Person) (inn string, err error) {
 	}
 
 	var ok bool
-	if ok, err = c.isUserActionRequired(); ok {
-		err = c.setUserAction()
+	if ok, err = c.isUserActionRequired(ctx); ok {
+		err = c.setUserAction(ctx)
 	}
 	if err != nil {
 		return
@@ -51,7 +52,7 @@ func (c *Client) SearchInn(person *Person) (inn string, err error) {
 	}
 
 	var b []byte
-	if b, err = c.post(serviceNalogUrl+"/inn-new-proc.do", params, headers); err != nil {
+	if b, err = c.post(ctx, serviceNalogUrl+"/inn-new-proc.do", params, headers); err != nil {
 		return
 	}
 
@@ -90,7 +91,7 @@ func (c *Client) SearchInn(person *Person) (inn string, err error) {
 	attemps := 10
 	for attemps > 0 {
 		var data *innNewProcJsonResponse
-		if data, err = c.requestInn(firstResp.RequestId, headers); err != nil {
+		if data, err = c.requestInn(ctx, firstResp.RequestId, headers); err != nil {
 			return
 		}
 
@@ -116,13 +117,13 @@ type innNewProcJsonResponse struct {
 	ErrorCode float64 `json:"error_code"`
 }
 
-func (c *Client) requestInn(requestId string, headers *map[string]string) (resp *innNewProcJsonResponse, err error) {
+func (c *Client) requestInn(ctx context.Context, requestId string, headers *map[string]string) (resp *innNewProcJsonResponse, err error) {
 	params := &url.Values{
 		"c":         {"get"},
 		"requestId": {requestId},
 	}
 	var b []byte
-	if b, err = c.post(serviceNalogUrl+"/inn-new-proc.json", params, headers); err != nil {
+	if b, err = c.post(ctx, serviceNalogUrl+"/inn-new-proc.json", params, headers); err != nil {
 		return
 	}
 

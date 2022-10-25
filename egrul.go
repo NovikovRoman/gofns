@@ -1,6 +1,7 @@
 package gofns
 
 import (
+	"context"
 	"encoding/json"
 	"net/url"
 	"strconv"
@@ -41,7 +42,7 @@ type Egrul struct {
 }
 
 //EgrulByInn получение сведений о юридическом лице по ИНН
-func (c *Client) EgrulByInn(inn string) (egruls []*Egrul, err error) {
+func (c *Client) EgrulByInn(ctx context.Context, inn string) (egruls []*Egrul, err error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
 		"Referer":          egrulUrl,
@@ -60,7 +61,7 @@ func (c *Client) EgrulByInn(inn string) (egruls []*Egrul, err error) {
 	}
 
 	var b []byte
-	if b, err = c.post(egrulUrl, data, &headers); err != nil {
+	if b, err = c.post(ctx, egrulUrl, data, &headers); err != nil {
 		err = newErrBadResponse(err.Error())
 		return
 	}
@@ -81,7 +82,7 @@ func (c *Client) EgrulByInn(inn string) (egruls []*Egrul, err error) {
 
 	timestamp := strconv.Itoa(int(time.Now().Unix()))
 	q := "?r=" + timestamp + "&_=" + timestamp
-	if b, err = c.get(egrulUrl+"/search-result/"+respToken.T+"/"+q, &headers); err != nil {
+	if b, err = c.get(ctx, egrulUrl+"/search-result/"+respToken.T+"/"+q, &headers); err != nil {
 		err = newErrBadResponse(err.Error())
 		return
 	}

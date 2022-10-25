@@ -1,6 +1,7 @@
 package gofns
 
 import (
+	"context"
 	"encoding/json"
 	"net/url"
 )
@@ -49,7 +50,7 @@ type Requisites struct {
 	} `json:"sprouDetails"`
 }
 
-func (c *Client) GetRequisites(regionCode int, addr string) (address *Address, requisites *Requisites, err error) {
+func (c *Client) GetRequisites(ctx context.Context, regionCode int, addr string) (address *Address, requisites *Requisites, err error) {
 	headers := map[string]string{
 		"User-Agent":    userAgent,
 		"Referer":       serviceNalogUrl + refererKladr,
@@ -58,7 +59,7 @@ func (c *Client) GetRequisites(regionCode int, addr string) (address *Address, r
 	}
 
 	// 1 шаг. Загрузить для установки cookie https://service.nalog.ru/addrno.do
-	if _, err = c.get(serviceNalogUrl+"/addrno.do", &headers); err != nil {
+	if _, err = c.get(ctx, serviceNalogUrl+"/addrno.do", &headers); err != nil {
 		return
 	}
 
@@ -69,7 +70,7 @@ func (c *Client) GetRequisites(regionCode int, addr string) (address *Address, r
 
 	// 3 шаг поиск адреса в кладр
 	var addressKladr *AddressKladrResponse
-	if addressKladr, err = c.SearchAddrInKladr(regionCode, address); err != nil {
+	if addressKladr, err = c.SearchAddrInKladr(ctx, regionCode, address); err != nil {
 		return
 	}
 
@@ -88,7 +89,7 @@ func (c *Client) GetRequisites(regionCode int, addr string) (address *Address, r
 
 	// 4 шаг получить ОКАТО
 	var respOkato *responseOkato
-	if respOkato, err = c.getOkato(regionCode, address); err != nil {
+	if respOkato, err = c.getOkato(ctx, regionCode, address); err != nil {
 		return
 	}
 
@@ -114,7 +115,7 @@ func (c *Client) GetRequisites(regionCode int, addr string) (address *Address, r
 		"PreventChromeAutocomplete": {""},
 	}
 	var b []byte
-	if b, err = c.post(serviceNalogUrl+"/addrno-proc.json", data, &headers); err != nil {
+	if b, err = c.post(ctx, serviceNalogUrl+"/addrno-proc.json", data, &headers); err != nil {
 		return
 	}
 

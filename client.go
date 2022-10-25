@@ -1,6 +1,7 @@
 package gofns
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/json"
 	"errors"
@@ -28,7 +29,7 @@ type Client struct {
 	httpClient *http.Client
 }
 
-func NewClient(transport *http.Transport) (c *Client, err error) {
+func NewClient(transport *http.Transport) (c *Client) {
 	c = &Client{}
 
 	if transport == nil {
@@ -39,25 +40,22 @@ func NewClient(transport *http.Transport) (c *Client, err error) {
 		}
 	}
 
-	var jar *cookiejar.Jar
-	if jar, err = cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List}); err != nil {
-		return
+	c.httpClient = &http.Client{
+		Timeout:   timeout + handshakeTimeout,
+		Transport: transport,
 	}
 
-	c.httpClient = &http.Client{
-		Transport: transport,
-		Jar:       jar,
-	}
+	c.httpClient.Jar, _ = cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	return
 }
 
-func (c *Client) isUserActionRequired() (isAuthorize bool, err error) {
+func (c *Client) isUserActionRequired(ctx context.Context) (isAuthorize bool, err error) {
 	var (
 		req  *http.Request
 		body []byte
 	)
 	isAuthorize = false
-	req, _ = http.NewRequest(http.MethodGet, serviceNalogUrl+"/inn.do", nil)
+	req, _ = http.NewRequestWithContext(ctx, http.MethodGet, serviceNalogUrl+"/inn.do", nil)
 
 	body, err = c.request(req)
 	if err != nil {
@@ -70,7 +68,7 @@ func (c *Client) isUserActionRequired() (isAuthorize bool, err error) {
 	return
 }
 
-func (c *Client) setUserAction() error {
+func (c *Client) setUserAction(ctx context.Context) error {
 	u := serviceNalogUrl + "/static/personal-data-proc.json"
 	data := &url.Values{
 		"from":         {"/inn.do"},
@@ -83,12 +81,12 @@ func (c *Client) setUserAction() error {
 		"Referer":          u + "?svc=inn&from=%2Finn.do",
 	}
 
-	_, err := c.post(u, data, headers)
+	_, err := c.post(ctx, u, data, headers)
 	return err
 }
 
-func (c *Client) get(u string, headers *map[string]string) ([]byte, error) {
-	req, err := http.NewRequest(http.MethodGet, u, nil)
+func (c *Client) get(ctx context.Context, u string, headers *map[string]string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -100,9 +98,9 @@ func (c *Client) get(u string, headers *map[string]string) ([]byte, error) {
 	return c.request(req)
 }
 
-func (c *Client) post(urlAction string, data *url.Values, headers *map[string]string) ([]byte, error) {
+func (c *Client) post(ctx context.Context, urlAction string, data *url.Values, headers *map[string]string) ([]byte, error) {
 	body := data.Encode()
-	req, err := http.NewRequest(http.MethodPost, urlAction, strings.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, urlAction, strings.NewReader(body))
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +141,7 @@ type AddressKladrResponse struct {
 }
 
 //SearchRegionCodeByIndex поиск кода региона по почтовому индексу.
-func (c *Client) SearchRegionCodeByIndex(index string) (code int, err error) {
+func (c *Client) SearchRegionCodeByIndex(ctx context.Context, index string) (code int, err error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
 		"Referer":          serviceNalogUrl + refererKladr,
@@ -159,7 +157,7 @@ func (c *Client) SearchRegionCodeByIndex(index string) (code int, err error) {
 	}
 
 	var b []byte
-	if b, err = c.post(serviceNalogUrl+"/static/kladr-edit.json", data, &headers); err != nil {
+	if b, err = c.post(ctx, serviceNalogUrl+"/static/kladr-edit.json", data, &headers); err != nil {
 		err = newErrBadResponse(err.Error())
 		return
 	}
@@ -181,7 +179,7 @@ func (c *Client) SearchRegionCodeByIndex(index string) (code int, err error) {
 }
 
 //SearchAddrInKladr поиск адреса в КЛАДР.
-func (c *Client) SearchAddrInKladr(regionCode int, addr *Address) (addrKladrResponse *AddressKladrResponse, err error) {
+func (c *Client) SearchAddrInKladr(ctx context.Context, regionCode int, addr *Address) (addrKladrResponse *AddressKladrResponse, err error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
 		"Referer":          serviceNalogUrl + refererKladr,
@@ -197,7 +195,8 @@ func (c *Client) SearchAddrInKladr(regionCode int, addr *Address) (addrKladrResp
 	}
 
 	var b []byte
-	if b, err = c.post(serviceNalogUrl+"/static/kladr-edit.json?c=context_search", data, &headers); err != nil {
+	b, err = c.post(ctx, serviceNalogUrl+"/static/kladr-edit.json?c=context_search", data, &headers)
+	if err != nil {
 		err = newErrBadResponse(err.Error())
 		return
 	}
@@ -226,7 +225,7 @@ type responseOkato struct {
 	Zip          string `json:"zip"`
 }
 
-func (c *Client) getOkato(regionCode int, address *Address) (r *responseOkato, err error) {
+func (c *Client) getOkato(ctx context.Context, regionCode int, address *Address) (r *responseOkato, err error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
 		"Referer":          serviceNalogUrl + refererKladr,
@@ -258,7 +257,7 @@ func (c *Client) getOkato(regionCode int, address *Address) (r *responseOkato, e
 	}
 
 	var b []byte
-	if b, err = c.post(serviceNalogUrl+"/static/kladr-edit.json", data, &headers); err != nil {
+	if b, err = c.post(ctx, serviceNalogUrl+"/static/kladr-edit.json", data, &headers); err != nil {
 		return
 	}
 

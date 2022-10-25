@@ -1,9 +1,10 @@
 package gofns
 
 import (
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"context"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNewClient(t *testing.T) {
@@ -13,18 +14,17 @@ func TestNewClient(t *testing.T) {
 		err error
 	)
 
-	c, err = NewClient(nil)
-	require.Nil(t, err)
-
-	ok, err = c.isUserActionRequired()
+	c = NewClient(nil)
+	ctx := context.Background()
+	ok, err = c.isUserActionRequired(ctx)
 	if assert.Nil(t, err) {
 		assert.True(t, ok)
 	}
 
-	err = c.setUserAction()
+	err = c.setUserAction(ctx)
 	assert.Nil(t, err)
 
-	ok, err = c.isUserActionRequired()
+	ok, err = c.isUserActionRequired(ctx)
 	if assert.Nil(t, err) {
 		assert.False(t, ok)
 	}
@@ -57,13 +57,13 @@ func TestClient_SearchRegionCodeByIndex(t *testing.T) {
 		client *Client
 		err    error
 	)
-	client, err = NewClient(nil)
-	require.Nil(t, err)
 
+	client = NewClient(nil)
+	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.index, func(t *testing.T) {
 			var gotCode int
-			gotCode, err = client.SearchRegionCodeByIndex(tt.index)
+			gotCode, err = client.SearchRegionCodeByIndex(ctx, tt.index)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("SearchRegionCodeByIndex() error = %v, wantErr %v", err, tt.wantErr)
 				return

@@ -1,7 +1,7 @@
 package gofns
 
 import (
-	"github.com/stretchr/testify/require"
+	"context"
 	"testing"
 )
 
@@ -11,8 +11,7 @@ func TestGetRequisites(t *testing.T) {
 		client *Client
 	)
 
-	client, err = NewClient(nil)
-	require.Nil(t, err)
+	client = NewClient(nil)
 
 	tests := []struct {
 		addr      string
@@ -63,13 +62,15 @@ func TestGetRequisites(t *testing.T) {
 			wantErr:   false,
 		},
 	}
+
+	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.addr, func(t *testing.T) {
 			var (
 				addr       *Address
 				requisites *Requisites
 			)
-			addr, requisites, err = client.GetRequisites(tt.region, tt.addr)
+			addr, requisites, err = client.GetRequisites(ctx, tt.region, tt.addr)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetRequisites() error = %v, wantErr %v", err, tt.wantErr)
