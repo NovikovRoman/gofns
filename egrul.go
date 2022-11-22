@@ -28,17 +28,19 @@ func (e *CaptchaRequiredError) Error() string {
 }
 
 type Egrul struct {
-	Company         string    `json:"c"`
-	General         string    `json:"g,omitempty"`
-	Address         string    `json:"a,omitempty"`
-	Inn             string    `json:"i,omitempty"`
-	Name            string    `json:"n"`
-	Ogrn            string    `json:"o"`
-	Kpp             string    `json:"p"`
-	RegistrationRaw string    `json:"r"`
-	Registration    time.Time `json:"-"`
-	Token           string    `json:"t"`
-	Entity          string    `json:"k"`
+	Company         string     `json:"c"`
+	General         string     `json:"g"`
+	Address         string     `json:"a"`
+	Inn             string     `json:"i"`
+	Name            string     `json:"n"`
+	Ogrn            string     `json:"o"`
+	Kpp             string     `json:"p"`
+	RegistrationRaw string     `json:"r"`
+	Registration    time.Time  `json:"-"`
+	TerminationRaw  string     `json:"e"`
+	Termination     *time.Time `json:"-"`
+	Token           string     `json:"t"`
+	Entity          string     `json:"k"`
 }
 
 //EgrulByInn получение сведений о юридическом лице по ИНН
@@ -97,6 +99,10 @@ func (c *Client) EgrulByInn(ctx context.Context, inn string) (egruls []*Egrul, e
 	egruls = rows.Rows
 	for i := range egruls {
 		egruls[i].Registration, _ = time.Parse(LayoutDate, egruls[i].RegistrationRaw)
+		if egruls[i].TerminationRaw != "" {
+			t, _ := time.Parse(LayoutDate, egruls[i].TerminationRaw)
+			egruls[i].Termination = &t
+		}
 	}
 	return
 }
