@@ -96,13 +96,18 @@ func (c *Client) EgrulByInn(ctx context.Context, inn string) (egruls []*Egrul, e
 		return
 	}
 
-	egruls = rows.Rows
-	for i := range egruls {
-		egruls[i].Registration, _ = time.Parse(LayoutDate, egruls[i].RegistrationRaw)
-		if egruls[i].TerminationRaw != "" {
-			t, _ := time.Parse(LayoutDate, egruls[i].TerminationRaw)
-			egruls[i].Termination = &t
+	egruls = []*Egrul{}
+	for _, r := range rows.Rows {
+		if r.Inn == "" {
+			continue
 		}
+
+		r.Registration, _ = time.Parse(LayoutDate, r.RegistrationRaw)
+		if r.TerminationRaw != "" {
+			t, _ := time.Parse(LayoutDate, r.TerminationRaw)
+			r.Termination = &t
+		}
+		egruls = append(egruls, r)
 	}
 	return
 }
