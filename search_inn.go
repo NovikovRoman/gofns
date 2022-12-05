@@ -18,6 +18,10 @@ func (c *Client) SearchInn(ctx context.Context, person *Person) (inn string, err
 		err = newErrBadArguments("Укажите документ физического лица.")
 		return
 	}
+	if person.Birthday.Before(time.Date(1910, 1, 1, 0, 0, 0, 0, time.UTC)) {
+		err = newErrBadArguments("Дата должна быть не ранее 1910 года.")
+		return
+	}
 
 	var ok bool
 	if ok, err = c.isUserActionRequired(ctx); ok {
