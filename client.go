@@ -29,22 +29,23 @@ type Client struct {
 	httpClient *http.Client
 }
 
-func NewClient(transport *http.Transport) (c *Client) {
+func NewClient(proxy *url.URL) (c *Client) {
 	c = &Client{}
 
-	if transport == nil {
-		transport = &http.Transport{
-			TLSHandshakeTimeout: handshakeTimeout,
-			IdleConnTimeout:     timeout,
-			TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
-		}
+	transport := &http.Transport{
+		TLSHandshakeTimeout: handshakeTimeout,
+		IdleConnTimeout:     timeout,
+		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
+	}
+
+	if proxy != nil {
+		transport.Proxy = http.ProxyURL(proxy)
 	}
 
 	c.httpClient = &http.Client{
 		Timeout:   timeout + handshakeTimeout,
 		Transport: transport,
 	}
-
 	c.httpClient.Jar, _ = cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	return
 }
