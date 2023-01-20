@@ -51,52 +51,17 @@ type Requisites struct {
 }
 
 func (c *Client) GetRequisites(ctx context.Context, regionCode int, address *Address) (requisites *Requisites, err error) {
-	// 1 шаг получить ОКАТО
-	var respOkato *responseOkato
-	if respOkato, err = c.getOkato(ctx, regionCode, address); err != nil {
+	// 1 шаг. Загрузить для установки cookie https://service.nalog.ru/addrno.do
+	if err = c.initCookie(ctx); err != nil {
 		return
 	}
 
-	// 2 шаг получить реквизиты
-	headers := map[string]string{
-		"User-Agent":       userAgent,
-		"Referer":          serviceNalogUrl + refererKladr,
-		"Cache-Control":    "no-cache",
-		"Pragma":           "no-cache",
-		"X-Requested-With": "XMLHttpRequest",
-	}
-
-	data := &url.Values{
-		"c":                         {"next"},
-		"step":                      {"1"},
-		"npKind":                    {"fl"},
-		"objectAddr":                {respOkato.AddressKladr},
-		"objectAddr_zip":            {respOkato.Zip},
-		"objectAddr_ifns":           {respOkato.Ifns},
-		"objectAddr_okatom":         {respOkato.Okato},
-		"ifns":                      {respOkato.Ifns},
-		"oktmmf":                    {respOkato.Okato},
-		"PreventChromeAutocomplete": {""},
-	}
-	var b []byte
-	if b, err = c.post(ctx, serviceNalogUrl+"/addrno-proc.json", data, &headers); err != nil {
-		return
-	}
-
-	err = json.Unmarshal(b, &requisites)
-	return
+	return c.findRequisites(ctx, regionCode, address)
 }
 
 func (c *Client) GetRequisitesByRawAddress(ctx context.Context, regionCode int, addr string) (address *Address, requisites *Requisites, err error) {
-	headers := map[string]string{
-		"User-Agent":    userAgent,
-		"Referer":       serviceNalogUrl + refererKladr,
-		"Cache-Control": "no-cache",
-		"Pragma":        "no-cache",
-	}
-
 	// 1 шаг. Загрузить для установки cookie https://service.nalog.ru/addrno.do
-	if _, err = c.get(ctx, serviceNalogUrl+"/addrno.do", &headers); err != nil {
+	if err = c.initCookie(ctx); err != nil {
 		return
 	}
 
@@ -125,5 +90,61 @@ func (c *Client) GetRequisitesByRawAddress(ctx context.Context, regionCode int, 
 	}
 
 	requisites, err = c.GetRequisites(ctx, regionCode, address)
+	return
+}
+
+func (c *Client) findRequisites(ctx context.Context, regionCode int, address *Address) (requisites *Requisites, err error) {
+	headers := map[string]string{
+		"User-Agent":    userAgent,
+		"Referer":       serviceNalogUrl + refererKladr,
+		"Cache-Control": "no-cache",
+		"Pragma":        "no-cache",
+	}
+
+	// 1 шаг получить ОКАТО
+	var respOkato *responseOkato
+	if respOkato, err = c.getOkato(ctx, regionCode, address); err != nil {
+		return
+	}
+
+	// 2 шаг получить реквизиты
+	headers = map[string]string{
+		"User-Agent":       userAgent,
+		"Referer":          serviceNalogUrl + refererKladr,
+		"Cache-Control":    "no-cache",
+		"Pragma":           "no-cache",
+		"X-Requested-With": "XMLHttpRequest",
+	}
+
+	data := &url.Values{
+		"c":                         {"next"},
+		"step":                      {"1"},
+		"npKind":                    {"fl"},
+		"objectAddr":                {respOkato.AddressKladr},
+		"objectAddr_zip":            {respOkato.Zip},
+		"objectAddr_ifns":           {respOkato.Ifns},
+		"objectAddr_okatom":         {respOkato.Okato},
+		"ifns":                      {respOkato.Ifns},
+		"oktmmf":                    {respOkato.Okato},
+		"PreventChromeAutocomplete": {""},
+	}
+	var b []byte
+	if b, err = c.post(ctx, serviceNalogUrl+"/addrno-proc.json", data, &headers); err != nil {
+		return
+	}
+
+	err = json.Unmarshal(b, &requisites)
+	return
+}
+
+func (c *Client) initCookie(ctx context.Context) (err error) {
+	headers := map[string]string{
+		"User-Agent":    userAgent,
+		"Referer":       serviceNalogUrl + refererKladr,
+		"Cache-Control": "no-cache",
+		"Pragma":        "no-cache",
+	}
+
+	_, err = c.get(ctx, serviceNalogUrl+"/addrno.do", &headers)
 	return
 }
