@@ -35,6 +35,7 @@ func (a *Address) parse() (err error) {
 	addr = strings.Replace(addr, " дитера", " литера", 1)
 	addr = strings.Replace(addr, "левое крыло", " ", 1)
 	addr = strings.Replace(addr, "правое крыло", " ", 1)
+	addr = strings.Replace(addr, "№", " ", -1)
 
 	res := a.parseWithZip(addr)
 	if res == "" { // без индекса
@@ -100,7 +101,7 @@ func (a *Address) parse() (err error) {
 	// Н. Новгород - Нижний Новгород
 	res = regexp.MustCompile(`(?si)Н\.\s*Новгород`).ReplaceAllString(res, "Нижний Новгород")
 
-	res = regexp.MustCompile(`(?si)(\sр\s*\.\s*п\s*\.|\sрп\.*|п\s*\.\s*г\s*\.\s*т\s*\.|пгт\.*|пос\.|[^а-яё]сп\.*[^а-яё]|[^а-яё]им.[^а-яё])`).ReplaceAllString(res, "")
+	res = regexp.MustCompile(`(?si)(\sр\s*\.\s*п\s*\.|\sрп\.*|п\s*\.\s*г\s*\.\s*т\s*\.|хут.|пгт\.*|пос\.|[^а-яё]сп\.*[^а-яё]|[^а-яё]им.[^а-яё])`).ReplaceAllString(res, "")
 	res = regexp.MustCompile(`(?si)(\sп\.|\sс\.|рц\.)`).ReplaceAllString(res, "")
 
 	// мкр
@@ -134,10 +135,10 @@ func (a *Address) parse() (err error) {
 	}
 
 	// Набережная
-	mm = regexp.MustCompile(`(?si)([^а-я])Набережная([^а-я])`).FindAllStringSubmatch(res, -1)
+	/* mm = regexp.MustCompile(`(?si)([^а-я])Набережная([^а-я])`).FindAllStringSubmatch(res, -1)
 	for _, item := range mm {
 		res = strings.Replace(res, item[0], item[1]+"наб"+item[2], 1)
-	}
+	} */
 
 	// бульвар
 	mm = regexp.MustCompile(`(?si)бульвар([^а-я])`).FindAllStringSubmatch(res, -1)
@@ -197,7 +198,7 @@ func (a *Address) parse() (err error) {
 }
 
 func (a *Address) parseWithZip(addr string) (res string) {
-	re := regexp.MustCompile(`(?si)^\s*([\d\s]+)(\s*,?.+?[\s,]*)((д[.\s]+|дом|корпус|[^а-я]корп[.\s]|[^а-я]к[.\s]|стр[.\s])\s*[0-9]+.*?$)`)
+	re := regexp.MustCompile(`(?si)^\s*([\d]{6})(\s*,?.+?[\s,]*)((д[.\s]+|дом|корпус|[^а-я]корп[.\s]|[^а-я]к[.\s]|стр[.\s])\s*[0-9]+.*?$)`)
 	m := re.FindStringSubmatch(addr)
 	if len(m) > 0 {
 		addr = strings.Replace(addr, m[1], "", 1)
@@ -208,7 +209,7 @@ func (a *Address) parseWithZip(addr string) (res string) {
 		return strings.Replace(addr, m[3], "", 1)
 	}
 
-	re = regexp.MustCompile(`(?si)^\s*([\d\s]+)(\s*,*.+\s*,\s*)([\da-zа-яё,./\s]+$)`)
+	re = regexp.MustCompile(`(?si)^\s*([\d]{6})(\s*,*.+\s*,\s*)([\da-zа-яё,./\s]+$)`)
 	m = re.FindStringSubmatch(addr)
 	if len(m) == 0 {
 		return
@@ -273,6 +274,30 @@ var corrections = []struct {
 		old: "Эвено-Бытантайский национальный улус (район)", new: "",
 	},
 	{
+		old: "Усть-Енисейский", new: "Таймырский",
+	},
+	{
+		old: "Б.Черёмушкинская", new: "Черёмушкинская",
+	},
+	{
+		old: "Б. Черёмушкинская", new: "Черёмушкинская",
+	},
+	{
+		old: "Республика Мордовия", new: "",
+	},
+	{
+		old: "г.Ялта", new: "г. Ялта",
+	},
+	{
+		old: "Вершина Теи", new: "Вершина Тёи",
+	},
+	{
+		old: "Б. Пролетарская", new: "Большая Пролетарская",
+	},
+	{
+		old: "Дмитрия Донского", new: "Д. Донского",
+	},
+	{
 		old: "Мегино-Кангаласский р-н", new: "Мегино-Кангаласский у",
 	},
 	{
@@ -283,6 +308,9 @@ var corrections = []struct {
 	},
 	{
 		old: "Сундуй Андрея", new: "Сундуй Андрей",
+	},
+	{
+		old: "Хади Такташ", new: "Х. Такташ",
 	},
 	{
 		old: "Э-Палкина", new: "Э Палкина",
