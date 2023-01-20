@@ -89,7 +89,7 @@ func (c *Client) GetRequisitesByRawAddress(ctx context.Context, regionCode int, 
 		return
 	}
 
-	requisites, err = c.GetRequisites(ctx, regionCode, address)
+	requisites, err = c.findRequisites(ctx, regionCode, address)
 	return
 }
 

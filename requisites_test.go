@@ -6,6 +6,51 @@ import (
 )
 
 func TestGetRequisites(t *testing.T) {
+	client := NewClient(nil)
+
+	tests := []struct {
+		name    string
+		addr    *Address
+		region  int
+		wantErr bool
+	}{
+		{
+			name: "Севастополь, ул. Суворова",
+			addr: &Address{
+				Kladr: "СУВОРОВА УЛ",
+				House: "25",
+			},
+			region:  92,
+			wantErr: false,
+		},
+		{
+			name: "229012 г. Севастополь, ул. Горпищенко, д.33",
+			addr: &Address{
+				Kladr: "Горпищенко УЛ",
+				House: "33",
+			},
+			region:  92,
+			wantErr: false,
+		},
+	}
+
+	ctx := context.Background()
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			requisites, err := client.GetRequisites(ctx, tt.region, tt.addr)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetRequisites() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			if requisites == nil {
+				t.Errorf("GetRequisites() requisites is nil")
+			}
+		})
+	}
+}
+
+func TestGetRequisitesByRawAddress(t *testing.T) {
 	var (
 		err    error
 		client *Client
@@ -73,15 +118,15 @@ func TestGetRequisites(t *testing.T) {
 			addr, requisites, err = client.GetRequisitesByRawAddress(ctx, tt.region, tt.addr)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetRequisites() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetRequisitesByRawAddress() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if addr.Kladr != tt.wantKladr {
-				t.Errorf("GetRequisites() kladr = %v, wantKladr %v", addr.Kladr, tt.wantKladr)
+				t.Errorf("GetRequisitesByRawAddress() kladr = %v, wantKladr %v", addr.Kladr, tt.wantKladr)
 			}
 
 			if requisites == nil {
-				t.Errorf("GetRequisites() requisites is nil")
+				t.Errorf("GetRequisitesByRawAddress() requisites is nil")
 			}
 		})
 	}
