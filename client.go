@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
@@ -130,7 +130,7 @@ func (c *Client) request(req *http.Request) (body []byte, err error) {
 		_ = resp.Body.Close()
 	}()
 
-	body, err = ioutil.ReadAll(resp.Body)
+	body, err = io.ReadAll(resp.Body)
 	return
 }
 
@@ -141,7 +141,7 @@ type AddressKladrResponse struct {
 	Content []byte   `json:"-"`
 }
 
-//SearchRegionCodeByIndex поиск кода региона по почтовому индексу.
+// SearchRegionCodeByIndex поиск кода региона по почтовому индексу.
 func (c *Client) SearchRegionCodeByIndex(ctx context.Context, index string) (code int, err error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
@@ -179,7 +179,7 @@ func (c *Client) SearchRegionCodeByIndex(ctx context.Context, index string) (cod
 	return
 }
 
-//SearchAddrInKladr поиск адреса в КЛАДР.
+// SearchAddrInKladr поиск адреса в КЛАДР.
 func (c *Client) SearchAddrInKladr(ctx context.Context, regionCode int, addr *Address) (addrKladrResponse *AddressKladrResponse, err error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
