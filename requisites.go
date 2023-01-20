@@ -50,7 +50,44 @@ type Requisites struct {
 	} `json:"sprouDetails"`
 }
 
-func (c *Client) GetRequisites(ctx context.Context, regionCode int, addr string) (address *Address, requisites *Requisites, err error) {
+func (c *Client) GetRequisites(ctx context.Context, regionCode int, address *Address) (requisites *Requisites, err error) {
+	// 1 шаг получить ОКАТО
+	var respOkato *responseOkato
+	if respOkato, err = c.getOkato(ctx, regionCode, address); err != nil {
+		return
+	}
+
+	// 2 шаг получить реквизиты
+	headers := map[string]string{
+		"User-Agent":       userAgent,
+		"Referer":          serviceNalogUrl + refererKladr,
+		"Cache-Control":    "no-cache",
+		"Pragma":           "no-cache",
+		"X-Requested-With": "XMLHttpRequest",
+	}
+
+	data := &url.Values{
+		"c":                         {"next"},
+		"step":                      {"1"},
+		"npKind":                    {"fl"},
+		"objectAddr":                {respOkato.AddressKladr},
+		"objectAddr_zip":            {respOkato.Zip},
+		"objectAddr_ifns":           {respOkato.Ifns},
+		"objectAddr_okatom":         {respOkato.Okato},
+		"ifns":                      {respOkato.Ifns},
+		"oktmmf":                    {respOkato.Okato},
+		"PreventChromeAutocomplete": {""},
+	}
+	var b []byte
+	if b, err = c.post(ctx, serviceNalogUrl+"/addrno-proc.json", data, &headers); err != nil {
+		return
+	}
+
+	err = json.Unmarshal(b, &requisites)
+	return
+}
+
+func (c *Client) GetRequisitesByRawAddress(ctx context.Context, regionCode int, addr string) (address *Address, requisites *Requisites, err error) {
 	headers := map[string]string{
 		"User-Agent":    userAgent,
 		"Referer":       serviceNalogUrl + refererKladr,
@@ -87,38 +124,6 @@ func (c *Client) GetRequisites(ctx context.Context, regionCode int, addr string)
 		return
 	}
 
-	// 4 шаг получить ОКАТО
-	var respOkato *responseOkato
-	if respOkato, err = c.getOkato(ctx, regionCode, address); err != nil {
-		return
-	}
-
-	// 5 шаг получить реквизиты
-	headers = map[string]string{
-		"User-Agent":       userAgent,
-		"Referer":          serviceNalogUrl + refererKladr,
-		"Cache-Control":    "no-cache",
-		"Pragma":           "no-cache",
-		"X-Requested-With": "XMLHttpRequest",
-	}
-
-	data := &url.Values{
-		"c":                         {"next"},
-		"step":                      {"1"},
-		"npKind":                    {"fl"},
-		"objectAddr":                {respOkato.AddressKladr},
-		"objectAddr_zip":            {respOkato.Zip},
-		"objectAddr_ifns":           {respOkato.Ifns},
-		"objectAddr_okatom":         {respOkato.Okato},
-		"ifns":                      {respOkato.Ifns},
-		"oktmmf":                    {respOkato.Okato},
-		"PreventChromeAutocomplete": {""},
-	}
-	var b []byte
-	if b, err = c.post(ctx, serviceNalogUrl+"/addrno-proc.json", data, &headers); err != nil {
-		return
-	}
-
-	err = json.Unmarshal(b, &requisites)
+	requisites, err = c.GetRequisites(ctx, regionCode, address)
 	return
 }
