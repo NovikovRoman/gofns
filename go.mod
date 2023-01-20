@@ -3,8 +3,8 @@ module github.com/NovikovRoman/gofns
 go 1.18
 
 require (
-	github.com/stretchr/testify v1.7.1
-	golang.org/x/net v0.0.0-20220526153639-5463443f8c37
+	github.com/stretchr/testify v1.8.1
+	golang.org/x/net v0.5.0
 )
 
 require (
