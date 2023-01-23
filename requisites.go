@@ -9,6 +9,10 @@ import (
 const refererKladr = "/static/kladr2.html?inp=objectAddr&aver=3.42.9&sver=4.39.6&pageStyle=GM2"
 
 type Requisites struct {
+	Form struct {
+		Oktmo string `json:"oktmmf"`
+	} `json:"form"`
+
 	IfnsDetails struct {
 		IfnsAddr    string `json:"ifnsAddr"`
 		IfnsCode    string `json:"ifnsCode"`
