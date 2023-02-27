@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func (c *Client) invalidPersonalInn(ctx context.Context, inn string) (ok bool, d time.Time, err error) {
+func (c *Client) InvalidPersonalInn(ctx context.Context, inn string) (ok bool, d time.Time, err error) {
 	if !isPersonalInn(inn) {
 		err = newErrBadArguments("Укажите ИНН физического лица (12 цифр).")
 		return

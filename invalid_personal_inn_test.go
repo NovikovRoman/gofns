@@ -42,7 +42,7 @@ func TestClient_invalidPersonalInn(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotOk, gotD, err := c.invalidPersonalInn(ctx, tt.name)
+			gotOk, gotD, err := c.InvalidPersonalInn(ctx, tt.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Client.invalidPersonalInn() error = %v, wantErr %v", err, tt.wantErr)
 				return
