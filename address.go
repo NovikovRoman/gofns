@@ -181,6 +181,8 @@ func (a *Address) parse() (err error) {
 	res = regexp.MustCompile(`(?si)(Николая|Н\.)\s*Островского`).ReplaceAllString(res, "Островского")
 	res = regexp.MustCompile(`(?si)Щёлково-\d+`).ReplaceAllString(res, "Щёлково")
 	res = regexp.MustCompile(`(?si),\s*а\.`).ReplaceAllString(res, ", аул")
+	res = regexp.MustCompile(`(?si)(Э-|Э.\s*)Палкина`).ReplaceAllString(res, "Эркемена Палкина")
+	res = regexp.MustCompile(`(?si)К.\s*Площадь`).ReplaceAllString(res, "Красная Площадь")
 
 	res = addressCorrections(res)
 
@@ -315,9 +317,6 @@ var corrections = []struct {
 	},
 	{
 		old: "Хади Такташ", new: "Х. Такташ",
-	},
-	{
-		old: "Э-Палкина", new: "Э Палкина",
 	},
 	{
 		old: "Берёзовский", new: "Березовский",
