@@ -193,13 +193,13 @@ func (a *Address) parse() (err error) {
 		err = errors.New("ошибка парсинга адреса")
 	}
 
-	a.Street = regexp.MustCompile(`(?si)^\s*a.`).ReplaceAllString(a.Street, "аул ")
+	a.Street = regexp.MustCompile(`(?si)^\s*а\.`).ReplaceAllString(a.Street, "аул ")
 	a.Street = regexp.MustCompile(`(?si)\s{2,}`).ReplaceAllString(a.Street, " ")
 	return
 }
 
 func (a *Address) parseWithZip(addr string) (res string) {
-	re := regexp.MustCompile(`(?si)^\s*([\d]{6})(\s*,?.+?[\s,]*)((д[.\s]+|дом|корпус|[^а-я]корп[.\s]|[^а-я]к[.\s]|стр[.\s])\s*[0-9]+.*?$)`)
+	re := regexp.MustCompile(`(?si)^\s*([\d]{6}|\d{3}\s\d{3})(\s*,?.+?[\s,]*)((д[.\s]+|дом|корпус|[^а-я]корп[.\s]|[^а-я]к[.\s]|стр[.\s])\s*[0-9]+.*?$)`)
 	m := re.FindStringSubmatch(addr)
 	if len(m) > 0 {
 		addr = strings.Replace(addr, m[1], "", 1)
@@ -306,6 +306,9 @@ var corrections = []struct {
 	},
 	{
 		old: "Н.Челны", new: "Набережные Челны",
+	},
+	{
+		old: "Набережная Тукая", new: "Тукая наб",
 	},
 	{
 		old: "Сундуй Андрея", new: "Сундуй Андрей",

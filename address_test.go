@@ -337,7 +337,7 @@ func TestAddress_NewAddress(t *testing.T) {
 			addr: &Address{
 				Source: "423807, г. Н.Челны, Набережная Тукая, д. 31А",
 				Zip:    "423807",
-				Street: "г. Набережные Челны, наб Тукая",
+				Street: "г. Набережные Челны, Тукая наб",
 				House:  "31А",
 			},
 			wantErr: false,
@@ -369,6 +369,16 @@ func TestAddress_NewAddress(t *testing.T) {
 				Street:   "г. Новый Уренгой, мкр Советский",
 				House:    "9А",
 				Building: "1",
+			},
+			wantErr: false,
+		},
+		{
+			addr: &Address{
+				Source: "385100, Республика Адыгея, а. Тахтамукай, ул. Х.М. Совмена, д. 14",
+				Zip:    "385100",
+				Region: "Республика Адыгея",
+				Street: "аул Тахтамукай, ул. Х.М. Совмена",
+				House:  "14",
 			},
 			wantErr: false,
 		},
