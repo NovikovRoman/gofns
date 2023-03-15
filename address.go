@@ -193,6 +193,9 @@ func (a *Address) parse() (err error) {
 		res = strings.Replace(res, "р-н", "у", -1)
 	}
 
+	// повторить после замен
+	res = regexp.MustCompile(`(?si)\s+,\s+`).ReplaceAllString(res, ", ")
+
 	a.Street = strings.Trim(res, ", ")
 	if a.Street == "" {
 		err = errors.New("ошибка парсинга адреса")
