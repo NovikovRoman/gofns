@@ -184,7 +184,7 @@ func (a *Address) parse() (err error) {
 	res = regexp.MustCompile(`(?si)(Э-|Э.\s*)Палкина`).ReplaceAllString(res, "Эркемена Палкина")
 	res = regexp.MustCompile(`(?si)К.\s*Площадь`).ReplaceAllString(res, "Красная Площадь")
 	res = regexp.MustCompile(`(?si)ПСП\.*`).ReplaceAllString(res, "")
-
+	res = regexp.MustCompile(`(?si)И\.\s*Шамиля`).ReplaceAllString(res, "Имама Шамиля")
 	res = addressCorrections(res)
 
 	if regexp.MustCompile(`(?si)Республик[иа]\s+Саха`).MatchString(a.Region) {
