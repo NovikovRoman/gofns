@@ -180,7 +180,7 @@ func (a *Address) parse() (err error) {
 	res = regexp.MustCompile(`(?si)(Александра|А\.)\s*Невского`).ReplaceAllString(res, "Невского")
 	res = regexp.MustCompile(`(?si)(Николая|Н\.)\s*Островского`).ReplaceAllString(res, "Островского")
 	res = regexp.MustCompile(`(?si)Щёлково-\d+`).ReplaceAllString(res, "Щёлково")
-	res = regexp.MustCompile(`(?si)(,\s*а\.|^\s*a.)`).ReplaceAllString(res, ", аул")
+	res = regexp.MustCompile(`(?si),\s*а\.`).ReplaceAllString(res, ", аул")
 
 	res = addressCorrections(res)
 
@@ -193,6 +193,7 @@ func (a *Address) parse() (err error) {
 		err = errors.New("ошибка парсинга адреса")
 	}
 
+	a.Street = regexp.MustCompile(`(?si)^\s*a.`).ReplaceAllString(a.Street, "аул ")
 	a.Street = regexp.MustCompile(`(?si)\s{2,}`).ReplaceAllString(a.Street, " ")
 	return
 }
