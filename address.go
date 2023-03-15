@@ -45,6 +45,8 @@ func (a *Address) parse() (err error) {
 		}
 	}
 
+	res = regexp.MustCompile(`(?si)\s+,\s+`).ReplaceAllString(res, ", ")
+
 	// литера
 	letter := ""
 	m := regexp.MustCompile(`(?si)(,|\s)\s*(литер\s|литера)(.+?)(\s|,|$)`).
@@ -147,7 +149,7 @@ func (a *Address) parse() (err error) {
 	}
 
 	// проспект
-	mm = regexp.MustCompile(`(?si)(пр-т|проспект|просп|пр\.)([^а-я])`).FindAllStringSubmatch(res, -1)
+	mm = regexp.MustCompile(`(?si)(пр-т|проспект|про-т\.|просп|пр\.)([^а-я])`).FindAllStringSubmatch(res, -1)
 	for _, item := range mm {
 		res = strings.Replace(res, item[0], "пр-кт "+item[2], 1)
 	}
