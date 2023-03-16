@@ -31,21 +31,22 @@ func (a *Address) parse() (err error) {
 	// латиницу на кириллицу
 	addr = strings.Replace(addr, "c", "с", -1)
 	addr = strings.Replace(addr, "\"", "", -1)
+	addr = regexp.MustCompile(`(?si)(^|\s)РС\(Я\)`).ReplaceAllString(addr, " Республика Саха (Якутия)")
 	addr = regexp.MustCompile(`(?si)\(.+?\)`).ReplaceAllString(addr, " ")
 	addr = strings.Replace(addr, " дитера", " литера", 1)
 	addr = strings.Replace(addr, "левое крыло", " ", 1)
 	addr = strings.Replace(addr, "правое крыло", " ", 1)
 	addr = strings.Replace(addr, "№", " ", -1)
 
-	res := a.parseWithZip(addr)
-	if res == "" { // без индекса
-		if res = a.parseWithoutZip(addr); res == "" {
-			err = errors.New("ошибка парсинга адреса")
-			return
-		}
+	var res string
+	if res = a.parseWithZip(addr); res == "" { // без индекса
+		res = a.parseWithoutZip(addr)
 	}
-	
-	res = regexp.MustCompile(`(?si)(^|\s)РС\(Я\)`).ReplaceAllString(res, " Республика Саха (Якутия)")
+	if res == "" {
+		err = errors.New("ошибка парсинга адреса")
+		return
+	}
+
 	res = regexp.MustCompile(`(?si)\s+,\s+`).ReplaceAllString(res, ", ")
 
 	// литера
