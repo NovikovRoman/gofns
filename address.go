@@ -44,7 +44,8 @@ func (a *Address) parse() (err error) {
 			return
 		}
 	}
-
+	
+	res = regexp.MustCompile(`(?si)(^|\s)РС\(Я\)`).ReplaceAllString(res, " Республика Саха (Якутия)")
 	res = regexp.MustCompile(`(?si)\s+,\s+`).ReplaceAllString(res, ", ")
 
 	// литера
@@ -88,7 +89,6 @@ func (a *Address) parse() (err error) {
 		regexp.MustCompile(`(?si)^(дом|стр|д\s*)\.*`).ReplaceAllString(a.House, ""), "., ")
 	a.House += letter
 
-	res = regexp.MustCompile(`(?si)(^|\s)РС\(Я\)`).ReplaceAllString(res, " Республика Саха (Якутия)")
 	m = regexp.MustCompile(`(?si)^(.*?((республика(\s*,|\s+Марий\s*Эл|\s+Саха\s*\(Якутия\)|.+?Алания|\s+[а-я]+)|РСО-Алания|республики.*?,)|(области|область|бласть|обл\.|край|округ|ЕАО|ЯНАО)[\s,]))`).FindStringSubmatch(res)
 	if len(m) > 0 {
 		a.Region = strings.Trim(m[1], ", ")
