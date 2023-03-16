@@ -133,6 +133,7 @@ func (a *Address) parse() (err error) {
 	}
 
 	// район
+	res = strings.Replace(res, "кожуун", "р-н", 1)
 	mm = regexp.MustCompile(`(?si)(район|р-он)([^а-я])`).FindAllStringSubmatch(res, -1)
 	for _, item := range mm {
 		res = strings.Replace(res, item[0], "р-н"+item[2], 1)
