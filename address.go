@@ -203,6 +203,13 @@ func (a *Address) parse() (err error) {
 		err = errors.New("ошибка парсинга адреса")
 	}
 
+	if regexp.MustCompile(`(?si)(Якутия|Саха)`).MatchString(a.Region) {
+		m = regexp.MustCompile(`(?si)([^а-я0-9])р-н([^а-я0-9])`).FindStringSubmatch(res)
+		if len(m) > 0 {
+			res = strings.Replace(res, m[0], m[1]+"у"+m[2], 1)
+		}
+	}
+
 	a.Street = regexp.MustCompile(`(?si)^\s*а\.`).ReplaceAllString(a.Street, "аул ")
 	a.Street = regexp.MustCompile(`(?si)\s{2,}`).ReplaceAllString(a.Street, " ")
 	return
@@ -307,9 +314,6 @@ var corrections = []struct {
 	},
 	{
 		old: "Дмитрия Донского", new: "Д. Донского",
-	},
-	{
-		old: "Мегино-Кангаласский р-н", new: "Мегино-Кангаласский у",
 	},
 	{
 		old: "В. Устюг", new: "Великий Устюг",
