@@ -105,8 +105,8 @@ func (a *Address) parse() (err error) {
 	// Н. Новгород - Нижний Новгород
 	res = regexp.MustCompile(`(?si)Н\.\s*Новгород`).ReplaceAllString(res, "Нижний Новгород")
 
-	res = regexp.MustCompile(`(?si)(\sр\s*\.\s*п\s*\.|\sрп\.*|п\s*\.\s*г\s*\.\s*т\s*\.|хут\.|пгт\.*|пос\.|[^а-яё]сп\.*[^а-яё]|[^а-яё]им\.[^а-яё])`).ReplaceAllString(res, "")
-	res = regexp.MustCompile(`(?si)(\sп\.|\sс\.|рц\.|\sд\.)`).ReplaceAllString(res, " ")
+	res = regexp.MustCompile(`(?si)(\sр\s*\.\s*п\s*\.|\sрп\.*|п\s*\.\s*г\s*\.\s*т\s*\.|хут\.|пгт\.*|пос\.|[^а-яё]сп\.*[^а-яё])`).ReplaceAllString(res, "")
+	res = regexp.MustCompile(`(?si)(\sп\.|\sс\.|рц\.|\sд\.|[^а-яё]им\.[^а-яё])`).ReplaceAllString(res, " ")
 
 	// мкр
 	mm = regexp.MustCompile(`(?si)(мкр-н|мкрн\.*|микрорайон)([^а-я])`).FindAllStringSubmatch(res, -1)
