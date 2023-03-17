@@ -220,7 +220,7 @@ func (a *Address) parseWithZip(addr string) (res string) {
 	re := regexp.MustCompile(`(?si)^\s*([\d]{6}|\d{3}\s\d{3})(\s*,?.+?[\s,]*)((д[.\s]+|дом|корпус|[^а-я]корп[.\s]|[^а-я]к[.\s]|стр[.\s])\s*[0-9]+.*?$)`)
 	m := re.FindStringSubmatch(addr)
 	if len(m) == 0 {
-		re := regexp.MustCompile(`(?si)^\s*([\d]{6}|\d{3}\s\d{3})(\s*,?.+?[\s,]*)(,*\s*[0-9]+.*?$)`)
+		re = regexp.MustCompile(`(?si)^\s*([\d]{6}|\d{3}\s\d{3})(\s*,?.+?[\s,]*)(,*\s*[0-9]+.*?$)`)
 		m = re.FindStringSubmatch(addr)
 	}
 	if len(m) > 0 {
@@ -232,7 +232,7 @@ func (a *Address) parseWithZip(addr string) (res string) {
 		return strings.Replace(addr, m[3], "", 1)
 	}
 
-	re = regexp.MustCompile(`(?si)^\s*([\d]{6})(\s*,*.+\s*,\s*)([\da-zа-яё,./\s]+$)`)
+	re = regexp.MustCompile(`(?si)^\s*([\d]{6})(\s*,*.+\s*,*\s*)([\da-zа-яё,.\/\s]+$)`)
 	m = re.FindStringSubmatch(addr)
 	if len(m) == 0 {
 		return
