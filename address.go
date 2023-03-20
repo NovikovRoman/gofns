@@ -90,7 +90,7 @@ func (a *Address) parse() (err error) {
 		regexp.MustCompile(`(?si)^(дом|стр|д\s*)\.*`).ReplaceAllString(a.House, ""), "., ")
 	a.House += letter
 
-	m = regexp.MustCompile(`(?si)^(.*?((республика(\s*,|\s+Марий\s*Эл|\s+Саха\s*\(Якутия\)|.+?Алания|\s+[а-я]+)|РСО-Алания|республики.*?,)|(области|область|бласть|обл\.|край|округ|ЕАО|ЯНАО)[\s,]))`).FindStringSubmatch(res)
+	m = regexp.MustCompile(`(?si)^(.*?((республика(\s*,|\s+Марий\s*Эл|\s+Саха\s*\(Якутия\)|.+?Алания|\s+[а-я]+)|РСО-Алания|республики.*?,)|(область\s*-\s*Кузбасc*|области|область|бласть|обл\.|край|округ|ЕАО|ЯНАО)[\s,]))`).FindStringSubmatch(res)
 	if len(m) > 0 {
 		a.Region = strings.Trim(m[1], ", ")
 		res = strings.Replace(res, m[1], "", 1)
