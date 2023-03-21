@@ -27,6 +27,10 @@ func TestDetermineRegionCodeByAddress(t *testing.T) {
 			addr:     "636800, Томская область, г. Асино ул. Советская, д. 26",
 			wantCode: 70,
 		},
+		{
+			addr:     "Агаповский районный суд (Челябинская область)",
+			wantCode: 74,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.addr, func(t *testing.T) {
