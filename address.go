@@ -32,7 +32,7 @@ func (a *Address) parse() (err error) {
 	addr = strings.Replace(addr, "c", "с", -1)
 	addr = strings.Replace(addr, "\"", "", -1)
 	addr = regexp.MustCompile(`(?si)(^|\s)РС\(Я\)`).ReplaceAllString(addr, " Республика Саха (Якутия)")
-	addr = regexp.MustCompile(`(?si)\(.+?\)`).ReplaceAllString(addr, " ")
+	addr = regexp.MustCompile(`(?si()\(.+?\)|Адрес)`).ReplaceAllString(addr, " ")
 	addr = strings.Replace(addr, " дитера", " литера", 1)
 	addr = strings.Replace(addr, "левое крыло", " ", 1)
 	addr = strings.Replace(addr, "правое крыло", " ", 1)
@@ -200,7 +200,7 @@ func (a *Address) parse() (err error) {
 	// повторить после замен
 	res = regexp.MustCompile(`(?si)\s+,\s+`).ReplaceAllString(res, ", ")
 
-	a.Street = strings.Trim(res, "., ")
+	a.Street = strings.Trim(res, ":., ")
 	if a.Street == "" {
 		err = errors.New("ошибка парсинга адреса")
 	}
