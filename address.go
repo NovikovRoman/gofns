@@ -158,7 +158,7 @@ func (a *Address) parse() (err error) {
 	}
 
 	// ул Название пр-кт или ул пр-кт Название
-	m = regexp.MustCompile(`(?si)([^а-я])ул\.*\s*(.+?)\sпр-кт`).FindStringSubmatch(res)
+	m = regexp.MustCompile(`(?si)([^а-я])ул[.\s]\s*(.+?)\sпр-кт`).FindStringSubmatch(res)
 	if len(m) > 0 {
 		res = strings.Replace(res, m[0], m[1]+"пр-кт "+m[2], 1)
 	}
@@ -166,6 +166,7 @@ func (a *Address) parse() (err error) {
 	if len(m) > 0 {
 		res = strings.Replace(res, m[0], m[1]+"пр-кт "+m[2], 1)
 	}
+
 	m = regexp.MustCompile(`(?si)([^а-я])город\s`).FindStringSubmatch(res)
 	if len(m) > 0 {
 		res = strings.Replace(res, m[0], m[1]+"г. ", 1)
