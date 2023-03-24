@@ -43,8 +43,8 @@ func TestGetRequisites(t *testing.T) {
 				t.Errorf("GetRequisites() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if requisites == nil {
-				t.Errorf("GetRequisites() requisites is nil")
+			if requisites == nil || requisites.Form.Oktmo == "" {
+				t.Errorf("GetRequisites() requisites is nil or empty")
 			}
 		})
 	}

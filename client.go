@@ -239,7 +239,7 @@ func (c *Client) getOkato(ctx context.Context, regionCode int, address *Address)
 		"c":           {"complete"},
 		"flags":       {"1211"},
 		"zip":         {""},
-		"region":      {strconv.Itoa(regionCode)},
+		"region":      {fmt.Sprintf("%02d", regionCode)},
 		"addr":        {address.Kladr},
 		"houseGeonim": {"ДОМ"},
 		"house":       {address.House},
