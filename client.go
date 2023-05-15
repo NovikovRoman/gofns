@@ -159,7 +159,7 @@ func (c *Client) SearchRegionCodeByIndex(ctx context.Context, index string) (cod
 
 	var b []byte
 	if b, err = c.post(ctx, serviceNalogUrl+"/static/kladr-edit.json", data, &headers); err != nil {
-		err = newErrBadResponse(err.Error())
+		err = errors.Join(ErrBadResponse, err)
 		return
 	}
 
@@ -198,7 +198,7 @@ func (c *Client) SearchAddrInKladr(ctx context.Context, regionCode int, addr *Ad
 	var b []byte
 	b, err = c.post(ctx, serviceNalogUrl+"/static/kladr-edit.json?c=context_search", data, &headers)
 	if err != nil {
-		err = newErrBadResponse(err.Error())
+		err = errors.Join(ErrBadResponse, err)
 		return
 	}
 
@@ -207,14 +207,13 @@ func (c *Client) SearchAddrInKladr(ctx context.Context, regionCode int, addr *Ad
 	}
 
 	if addrKladrResponse == nil {
-		err = newErrBadResponse("Response content: null")
+		err = errors.Join(ErrBadResponse, errors.New("Response content: nil"))
 		return
 	}
 
 	if addrKladrResponse.Error != "" {
-		err = newErrBadResponse(addrKladrResponse.Error)
+		err = errors.Join(ErrBadResponse, errors.New(addrKladrResponse.Error))
 	}
-
 	return
 }
 

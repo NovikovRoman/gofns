@@ -3,6 +3,7 @@ package gofns
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/url"
 	"strings"
@@ -11,15 +12,15 @@ import (
 
 func (c *Client) SearchInn(ctx context.Context, person *Person) (inn string, err error) {
 	if person == nil {
-		err = newErrBadArguments("Укажите сведения о физическом лице.")
+		err = errors.Join(ErrBadArguments, errors.New("Укажите сведения о физическом лице."))
 		return
 	}
 	if person.Document == nil {
-		err = newErrBadArguments("Укажите документ физического лица.")
+		err = errors.Join(ErrBadArguments, errors.New("Укажите документ физического лица."))
 		return
 	}
 	if person.Birthday.Before(time.Date(1910, 1, 1, 0, 0, 0, 0, time.UTC)) {
-		err = newErrBadArguments("Дата должна быть не ранее 1910 года.")
+		err = errors.Join(ErrBadArguments, errors.New("Дата должна быть не ранее 1910 года."))
 		return
 	}
 
@@ -72,7 +73,7 @@ func (c *Client) SearchInn(ctx context.Context, person *Person) (inn string, err
 	}
 
 	if firstResp.CaptchaRequired {
-		err = &ErrTooManyRequests{}
+		err = ErrTooManyRequests
 		return
 	}
 
@@ -81,12 +82,12 @@ func (c *Client) SearchInn(ctx context.Context, person *Person) (inn string, err
 		for _, item := range firstResp.Errors {
 			s += strings.Join(item, ". ") + "\n"
 		}
-		err = newErrBadArguments(s)
+		err = errors.Join(ErrBadArguments, errors.New(s))
 		return
 
 	} else if firstResp.Error != "" {
-		err = newErrUnknownResponse(
-			fmt.Sprintf("Error: %s. Status: %d ", firstResp.Error, firstResp.Status))
+		err = errors.Join(ErrUnknownResponse,
+			fmt.Errorf("Error: %s. Status: %d ", firstResp.Error, firstResp.Status))
 		return
 	}
 
@@ -107,7 +108,8 @@ func (c *Client) SearchInn(ctx context.Context, person *Person) (inn string, err
 		if data.State < 0 {
 			attemps--
 			time.Sleep(time.Millisecond * 50)
-			err = newErrUnknownResponse(fmt.Sprintf("Ошибка получения данных. State: %f ", data.State))
+			err = errors.Join(ErrUnknownResponse,
+				fmt.Errorf("Ошибка получения данных. State: %f ", data.State))
 		}
 	}
 	return

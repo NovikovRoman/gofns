@@ -3,7 +3,9 @@ package gofns
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/url"
+	"strings"
 )
 
 const refererKladr = "/static/kladr2.html?inp=objectAddr&aver=3.42.9&sver=4.39.6&pageStyle=GM2"
@@ -82,14 +84,14 @@ func (c *Client) GetRequisitesByRawAddress(ctx context.Context, regionCode int, 
 
 	switch len(addressKladr.Items) {
 	case 0:
-		err = &ErrKladrNotFound{}
+		err = ErrKladrNotFound
 		return
 
 	case 1:
 		address.Kladr = addressKladr.Items[0]
 
 	default:
-		err = newErrKladr(addressKladr.Items...)
+		err = errors.Join(ErrMultiKladr, errors.New(strings.Join(addressKladr.Items, "\n")))
 		return
 	}
 
