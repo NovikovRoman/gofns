@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/url"
 	"strings"
 )
@@ -110,10 +111,32 @@ func (c *Client) findRequisites(ctx context.Context, regionCode int, address *Ad
 	// 1 шаг получить ОКАТО
 	var respOkato *responseOkato
 	if respOkato, err = c.getOkato(ctx, regionCode, address); err != nil {
+		err = fmt.Errorf("step 1: %w", err)
 		return
 	}
 
-	// 2 шаг получить реквизиты
+	// 2 шаг получить oktmmf
+	type respOktmmf struct {
+		OktmmfList map[string]string `json:"oktmmfList"`
+	}
+	data := &url.Values{
+		"c":      {"getOktmmf"},
+		"ifns":   {respOkato.Ifns},
+		"okatom": {respOkato.Okato},
+	}
+	var b []byte
+	if b, err = c.post(ctx, serviceNalogUrl+"/addrno-proc.json", data, &headers); err != nil {
+		err = fmt.Errorf("step 2: %w", err)
+		return
+	}
+
+	var resp respOktmmf
+	if err = json.Unmarshal(b, &resp); err != nil {
+		err = fmt.Errorf("step 2: %w", err)
+		return
+	}
+
+	// 3 шаг получить реквизиты
 	headers = map[string]string{
 		"User-Agent":       userAgent,
 		"Referer":          serviceNalogUrl + refererKladr,
@@ -122,7 +145,12 @@ func (c *Client) findRequisites(ctx context.Context, regionCode int, address *Ad
 		"X-Requested-With": "XMLHttpRequest",
 	}
 
-	data := &url.Values{
+	oktmmf := ""
+	if _, ok := resp.OktmmfList[respOkato.Okato]; ok {
+		oktmmf = respOkato.Okato
+	}
+
+	data = &url.Values{
 		"c":                         {"next"},
 		"step":                      {"1"},
 		"npKind":                    {"fl"},
@@ -131,15 +159,17 @@ func (c *Client) findRequisites(ctx context.Context, regionCode int, address *Ad
 		"objectAddr_ifns":           {respOkato.Ifns},
 		"objectAddr_okatom":         {respOkato.Okato},
 		"ifns":                      {respOkato.Ifns},
-		"oktmmf":                    {respOkato.Okato},
+		"oktmmf":                    {oktmmf},
 		"PreventChromeAutocomplete": {""},
 	}
-	var b []byte
 	if b, err = c.post(ctx, serviceNalogUrl+"/addrno-proc.json", data, &headers); err != nil {
+		err = fmt.Errorf("step 3: %w", err)
 		return
 	}
 
-	err = json.Unmarshal(b, &requisites)
+	if err = json.Unmarshal(b, &requisites); err != nil {
+		err = fmt.Errorf("step 3: %w", err)
+	}
 	return
 }
 

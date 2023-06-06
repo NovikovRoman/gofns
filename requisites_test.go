@@ -32,6 +32,15 @@ func TestGetRequisites(t *testing.T) {
 			region:  92,
 			wantErr: false,
 		},
+		{
+			name: "368300, Республика Дагестан, КАСПИЙСК Г,СОВЕТСКАЯ УЛ",
+			addr: &Address{
+				Kladr: "КАСПИЙСК Г,СОВЕТСКАЯ УЛ",
+				House: "17",
+			},
+			region:  5,
+			wantErr: false,
+		},
 	}
 
 	ctx := context.Background()
@@ -43,7 +52,7 @@ func TestGetRequisites(t *testing.T) {
 				t.Errorf("GetRequisites() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if requisites == nil || requisites.Form.Oktmo == "" {
+			if requisites == nil || requisites.PayeeDetails.BankName == "" {
 				t.Errorf("GetRequisites() requisites is nil or empty")
 			}
 		})
