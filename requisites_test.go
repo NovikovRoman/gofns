@@ -15,6 +15,15 @@ func TestGetRequisites(t *testing.T) {
 		wantErr bool
 	}{
 		{
+			name: "298312, г. Керчь, ул. Фурманова, 9",
+			addr: &Address{
+				Kladr: "КЕРЧЬ Г,ФУРМАНОВА УЛ",
+				House: "9",
+			},
+			region:  91,
+			wantErr: true,
+		},
+		{
 			name: "Севастополь, ул. Суворова",
 			addr: &Address{
 				Kladr: "СУВОРОВА УЛ",
@@ -52,7 +61,7 @@ func TestGetRequisites(t *testing.T) {
 				t.Errorf("GetRequisites() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if requisites == nil || requisites.PayeeDetails.BankName == "" {
+			if !tt.wantErr && (requisites == nil || requisites.PayeeDetails.BankName == "") {
 				t.Errorf("GetRequisites() requisites is nil or empty")
 			}
 		})

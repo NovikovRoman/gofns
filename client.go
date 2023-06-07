@@ -261,6 +261,25 @@ func (c *Client) getOkato(ctx context.Context, regionCode int, address *Address)
 		return
 	}
 
+	type errResp struct {
+		Error  string              `json:"ERROR"`
+		Errors map[string][]string `json:"ERRORS"`
+		Status int                 `json:"STATUS"`
+	}
+	var resp errResp
+	if err = json.Unmarshal(b, &resp); err != nil {
+		return
+	}
+
+	if resp.Error != "" {
+		msg := ""
+		for k, v := range resp.Errors {
+			msg += fmt.Sprintf("%s: %s\n", k, strings.Join(v, ", "))
+		}
+		err = fmt.Errorf("%s", msg)
+		return
+	}
+
 	err = json.Unmarshal(b, &r)
 	return
 }
