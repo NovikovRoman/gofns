@@ -227,8 +227,8 @@ func (a *Address) parseWithZip(addr string) (res string) {
 	if len(m) > 0 {
 		addr = strings.Replace(addr, m[1], "", 1)
 		a.Zip = strings.Replace(m[1], " ", "", -1)
-
-		a.House = regexp.MustCompile(`(\(.+?\)|[«»"]|,\s*\d+-[о]*й\s+этаж|,\s*\d+\s*этаж|этаж\s*\d+\s*$)`).
+		a.House = regexp.
+			MustCompile(`(?si)(\(.+?\)|[«»"]|,\s*\d+-[о]*й\s+этаж|,\s*\d+\s*этаж|этаж\s*\d+\s*$|этажи(\s*\d+\s*,*)+$)`).
 			ReplaceAllString(m[3], "")
 		return strings.Replace(addr, m[3], "", 1)
 	}
