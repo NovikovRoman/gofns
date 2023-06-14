@@ -8,6 +8,10 @@ func TestDetermineRegionCodeByAddress(t *testing.T) {
 		wantCode int
 	}{
 		{
+			addr:     "386101, г. Назрань, ул. Московская, д. 33",
+			wantCode: 6,
+		},
+		{
 			addr:     "668410, Республики Тыва, Каа-Хемский район, с. Сарыг-Сеп, ул. Енисейская, д. 172, кв. 6",
 			wantCode: 17,
 		},
