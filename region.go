@@ -366,7 +366,7 @@ func DetermineRegionCodeByAddress(addr string) (code int) {
 	if regexp.MustCompile(`(?si)[^а-я]Кемеров[оа]([^а-я]|$)`).MatchString(addr) {
 		return 42
 	}
-	if regexp.MustCompile(`(?si)[^а-я]Киров[а]*([^а-я]|$)`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я]Киров([^а-я]|$)`).MatchString(addr) {
 		return 43
 	}
 	if regexp.MustCompile(`(?si)[^а-я]Костром[аы]([^а-я]|$)`).MatchString(addr) {
