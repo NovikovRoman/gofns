@@ -156,7 +156,7 @@ func DetermineRegionCodeByAddress(addr string) (code int) {
 	if regexp.MustCompile(`(?si)(Еврейск(ая|ой)\s+(АО|автономн(ая|ой))|[^а-я]ЕАО[^а-я])`).MatchString(addr) {
 		return 79
 	}
-	if regexp.MustCompile(`(?si)Ненецк(ий|ого)\s+(автономн(ый|ого)|ао)`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)(\s|^)Ненецк(ий|ого)\s+(автономн(ый|ого)|ао)`).MatchString(addr) {
 		return 83
 	}
 	if regexp.MustCompile(`(?si)Ханты-Мансийск(ий|ого)\s+(автономн(ый|ого)|ао)`).MatchString(addr) {
@@ -450,7 +450,7 @@ func DetermineRegionCodeByAddress(addr string) (code int) {
 	if regexp.MustCompile(`(?si)[^а-я]Ломоносов([^а-я]|$)`).MatchString(addr) {
 		return 78
 	}
-	if regexp.MustCompile(`(?si)[^а-я](Нижневартовск|Сургут)[а]*([^а-я]|$)`).MatchString(addr) {
+	if regexp.MustCompile(`(?si)[^а-я](Нижневартовск|Сургут|Ханты-Мансийск)[а]*([^а-я]|$)`).MatchString(addr) {
 		return 86
 	}
 	return 0
