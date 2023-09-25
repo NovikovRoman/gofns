@@ -2,17 +2,12 @@ package gofns
 
 import (
 	"context"
-	"net/http"
 	"reflect"
 	"testing"
 	"time"
 )
 
 func TestClient_invalidPersonalInn(t *testing.T) {
-	type fields struct {
-		httpClient *http.Client
-	}
-
 	tests := []struct {
 		name    string
 		wantOk  bool
