@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
@@ -57,87 +58,207 @@ type Requisites struct {
 	} `json:"sprouDetails"`
 }
 
-func (c *Client) GetRequisites(ctx context.Context, regionCode int, address *Address) (requisites *Requisites, err error) {
-	// 1 шаг. Загрузить для установки cookie https://service.nalog.ru/addrno.do
-	if err = c.initCookie(ctx); err != nil {
-		return
-	}
+const (
+	addressType  = 2
+	fiasHost     = "https://fias.nalog.ru"
+	fiasApiPoint = "/api/spas/v2.0"
+)
 
-	return c.findRequisites(ctx, regionCode, address)
-}
+func (c *Client) GetRequisitesByRawAddress(ctx context.Context, addr string) (fAddr fiasAddress, r *Requisites, err error) {
+	addr = strings.Replace(addr, "РСО-Алания", "Алания", 1)
 
-func (c *Client) GetRequisitesByRawAddress(ctx context.Context, regionCode int, addr string) (address *Address, requisites *Requisites, err error) {
-	// 1 шаг. Загрузить для установки cookie https://service.nalog.ru/addrno.do
-	if err = c.initCookie(ctx); err != nil {
-		return
-	}
-
-	// 2 шаг распарсить адрес
-	if address, err = NewAddress(addr); err != nil {
-		return
-	}
-
-	// 3 шаг поиск адреса в кладр
-	var addressKladr *AddressKladrResponse
-	if addressKladr, err = c.SearchAddrInKladr(ctx, regionCode, address); err != nil {
-		return
-	}
-
-	switch len(addressKladr.Items) {
-	case 0:
-		err = ErrKladrNotFound
-		return
-
-	case 1:
-		address.Kladr = addressKladr.Items[0]
-
-	default:
-		err = errors.Join(ErrMultiKladr, errors.New(strings.Join(addressKladr.Items, "\n")))
-		return
-	}
-
-	requisites, err = c.findRequisites(ctx, regionCode, address)
-	return
-}
-
-func (c *Client) findRequisites(ctx context.Context, regionCode int, address *Address) (requisites *Requisites, err error) {
-	headers := map[string]string{
-		"User-Agent":    userAgent,
-		"Referer":       serviceNalogUrl + refererKladr,
-		"Cache-Control": "no-cache",
-		"Pragma":        "no-cache",
-	}
-
-	// 1 шаг получить ОКАТО
-	var respOkato *responseOkato
-	if respOkato, err = c.getOkato(ctx, regionCode, address); err != nil {
+	// 1 шаг. Найти адрес в fias.nalog.ru
+	var addrs []fiasAddress
+	if addrs, err = c.getFiasAddresses(ctx, addr); err != nil {
 		err = fmt.Errorf("step 1: %w", err)
 		return
 	}
+	if len(addrs) == 0 {
+		err = errors.New("Address not found")
+		return
+	}
+	fAddr = addrs[0]
 
-	// 2 шаг получить oktmmf
-	type respOktmmf struct {
-		OktmmfList map[string]string `json:"oktmmfList"`
+	// 2 шаг. Получить дополнительную информацию об адресе
+	var addrInfo []fiasAddressInfo
+	if addrInfo, err = c.getAddressInfo(ctx, addrs[0]); err != nil {
+		err = fmt.Errorf("step 2: %w", err)
+		return
 	}
-	data := &url.Values{
-		"c":      {"getOktmmf"},
-		"ifns":   {respOkato.Ifns},
-		"okatom": {respOkato.Okato},
+	if len(addrInfo) == 0 {
+		err = errors.New("Address info not found")
+		return
 	}
+
+	fAddr.Info = addrInfo[0]
+
+	// 3 шаг. Получить реквизиты
+	if r, err = c.GetRequisites(ctx, addrInfo[0].AddressDetails.IfnsFl); err != nil {
+		err = fmt.Errorf("step 3: %w", err)
+	}
+	return
+}
+
+type fiasAddress struct {
+	ObjectID int             `json:"object_id"`
+	FullName string          `json:"full_name"`
+	Info     fiasAddressInfo `json:"info"`
+}
+
+type fiasError struct {
+	Errors map[string]interface{} `json:"errors"`
+	Title  string                 `json:"title"`
+	Status int                    `json:"status"`
+}
+
+func (f fiasError) IsError(field string) (ok bool, msg string) {
+	v, ok := f.Errors[field]
+	if ok {
+		msg = strings.Join(v.([]string), " ")
+	}
+	return
+}
+
+func (f fiasError) ErrorByFields(fields ...string) (ok bool, msg string) {
+	for _, field := range fields {
+		v, yes := f.Errors[field]
+		if !yes {
+			continue
+		}
+
+		ok = yes
+		msg += field + ": "
+		for _, vv := range v.([]interface{}) {
+			msg += vv.(string) + " "
+		}
+		msg += "\n"
+	}
+	return
+}
+
+func (f fiasError) Error() string {
+	return fmt.Sprintf("[%d] %s", f.Status, f.Title)
+}
+
+func (c *Client) GetFiasNumRequests() int {
+	return c.fias.numRequests
+}
+
+func (c *Client) getFiasAddresses(ctx context.Context, addr string) (addrs []fiasAddress, err error) {
+	if err = c.getFiasToken(ctx); err != nil {
+		err = fmt.Errorf("FiasAddress getFiasToken: %w", err)
+		return
+	}
+
+	headers := map[string]string{
+		"User-Agent":    userAgent,
+		"Cache-Control": "no-cache",
+		"Pragma":        "no-cache",
+		"Master-Token":  c.fias.Token,
+		"Accept":        "application/json, text/javascript, */*; q=0.01",
+		"Referer":       fiasHost,
+	}
+
+	v := url.Values{
+		"search_string": {addr},
+		"address_type":  {strconv.Itoa(addressType)},
+	}
+	u := fmt.Sprintf("%s%s/GetAddressHint?%s", c.fias.Url, fiasApiPoint, v.Encode())
+
 	var b []byte
-	if b, err = c.post(ctx, serviceNalogUrl+"/addrno-proc.json", data, &headers); err != nil {
-		err = fmt.Errorf("step 2: %w", err)
+	if b, err = c.get(ctx, u, &headers); err != nil {
 		return
 	}
 
-	var resp respOktmmf
-	if err = json.Unmarshal(b, &resp); err != nil {
-		err = fmt.Errorf("step 2: %w", err)
+	c.fias.numRequests++
+
+	type hints struct {
+		Hints []fiasAddress `json:"hints"`
+	}
+	var h hints
+	if err = json.Unmarshal(b, &h); err != nil {
 		return
 	}
 
-	// 3 шаг получить реквизиты
-	headers = map[string]string{
+	if len(h.Hints) > 0 {
+		return h.Hints, err
+	}
+
+	var fErr fiasError
+	if err = json.Unmarshal(b, &fErr); err != nil {
+		return
+	}
+
+	if fErr.Title != "" {
+		_, msg := fErr.ErrorByFields("search_string", "address_type")
+		err = fmt.Errorf("%s %s", fErr.Title, msg)
+	}
+	return addrs, err
+}
+
+func (c *Client) getAddressInfo(ctx context.Context, addr fiasAddress) (res []fiasAddressInfo, err error) {
+	if err = c.getFiasToken(ctx); err != nil {
+		err = fmt.Errorf("AddressInfo getFiasToken: %w", err)
+		return
+	}
+
+	headers := map[string]string{
+		"User-Agent":    userAgent,
+		"Cache-Control": "no-cache",
+		"Pragma":        "no-cache",
+		"Master-Token":  c.fias.Token,
+		"Accept":        "application/json, text/javascript, */*; q=0.01",
+		"Referer":       fiasHost,
+	}
+
+	v := url.Values{
+		"object_id":    {strconv.Itoa(addr.ObjectID)},
+		"address_type": {strconv.Itoa(addressType)},
+	}
+	u := fmt.Sprintf("%s%s/GetAddressItemById?%s", c.fias.Url, fiasApiPoint, v.Encode())
+
+	var b []byte
+	if b, err = c.get(ctx, u, &headers); err != nil {
+		return
+	}
+
+	c.fias.numRequests++
+
+	var resInfo struct {
+		Addresses []fiasAddressInfo `json:"addresses"`
+	}
+	if err = json.Unmarshal(b, &resInfo); err != nil {
+		return
+	}
+	return resInfo.Addresses, nil
+}
+
+type fiasAddressInfo struct {
+	ObjectID       int `json:"object_id"`
+	ObjectLevelID  int `json:"object_level_id"`
+	RegionCode     int `json:"region_code"`
+	AddressDetails struct {
+		PostalCode  string `json:"postal_code"`
+		IfnsUl      string `json:"ifns_ul"`
+		IfnsFl      string `json:"ifns_fl"`
+		Okato       string `json:"okato"`
+		Oktmo       string `json:"oktmo"`
+		OktmoBudget string `json:"oktmo_budget"`
+	} `json:"address_details"`
+	Hierarchy []struct {
+		ObjectType    string `json:"object_type"`
+		Name          string `json:"name"`
+		TypeName      string `json:"type_name"`
+		TypeShortName string `json:"type_short_name"`
+		ObjectID      int    `json:"object_id"`
+		ObjectLevelID int    `json:"object_level_id"`
+		FullName      string `json:"full_name"`
+		FullNameShort string `json:"full_name_short"`
+	} `json:"hierarchy"`
+}
+
+func (c *Client) GetRequisites(ctx context.Context, ifns string) (requisites *Requisites, err error) {
+	headers := map[string]string{
 		"User-Agent":       userAgent,
 		"Referer":          serviceNalogUrl + refererKladr,
 		"Cache-Control":    "no-cache",
@@ -145,42 +266,65 @@ func (c *Client) findRequisites(ctx context.Context, regionCode int, address *Ad
 		"X-Requested-With": "XMLHttpRequest",
 	}
 
-	oktmmf := ""
-	if _, ok := resp.OktmmfList[respOkato.Okato]; ok {
-		oktmmf = respOkato.Okato
-	}
-
-	data = &url.Values{
+	data := &url.Values{
 		"c":                         {"next"},
 		"step":                      {"1"},
 		"npKind":                    {"fl"},
-		"objectAddr":                {respOkato.AddressKladr},
-		"objectAddr_zip":            {respOkato.Zip},
-		"objectAddr_ifns":           {respOkato.Ifns},
-		"objectAddr_okatom":         {respOkato.Okato},
-		"ifns":                      {respOkato.Ifns},
-		"oktmmf":                    {oktmmf},
+		"objectAddr":                {""},
+		"objectAddr_zip":            {""},
+		"objectAddr_ifns":           {""},
+		"objectAddr_okatom":         {""},
+		"ifns":                      {ifns},
+		"oktmmf":                    {""},
 		"PreventChromeAutocomplete": {""},
 	}
+	var b []byte
 	if b, err = c.post(ctx, serviceNalogUrl+"/addrno-proc.json", data, &headers); err != nil {
-		err = fmt.Errorf("step 3: %w", err)
 		return
 	}
 
 	if err = json.Unmarshal(b, &requisites); err != nil {
-		err = fmt.Errorf("step 3: %w", err)
+		return
+	}
+
+	if requisites.PayeeDetails.BankName == "" {
+		var snErr struct {
+			Error  string `json:"ERROR"`
+			Status int    `json:"STATUS"`
+		}
+		_ = json.Unmarshal(b, &snErr)
+		if snErr.Error != "" {
+			err = ErrInspectionCode
+		}
 	}
 	return
 }
 
-func (c *Client) initCookie(ctx context.Context) (err error) {
-	headers := map[string]string{
-		"User-Agent":    userAgent,
-		"Referer":       serviceNalogUrl + refererKladr,
-		"Cache-Control": "no-cache",
-		"Pragma":        "no-cache",
+func (c *Client) getFiasToken(ctx context.Context) (err error) {
+	if c.fias.Token != "" {
+		return
 	}
 
-	_, err = c.get(ctx, serviceNalogUrl+"/addrno.do", &headers)
+	headers := map[string]string{
+		"User-Agent":       userAgent,
+		"Cache-Control":    "no-cache",
+		"Pragma":           "no-cache",
+		"X-Requested-With": "XMLHttpRequest",
+		"Referer":          fiasHost,
+		"Origin":           fiasHost,
+	}
+
+	v := url.Values{
+		"url": {fiasHost + "/"},
+	}
+
+	var b []byte
+	b, err = c.get(ctx, fmt.Sprintf("%s%s?%s", fiasHost, "/Home/GetSpasSettings", v.Encode()), &headers)
+	if err != nil {
+		return
+	}
+
+	err = json.Unmarshal(b, &c.fias)
+	c.fias.numRequests++
 	return
 }

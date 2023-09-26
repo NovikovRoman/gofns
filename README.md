@@ -55,3 +55,26 @@ if err != nil {
 }
 fmt.Println(res)
 ```
+
+## Поиск реквизитов по адресу
+
+[!] Необходимо следить за количеством запросов. 100 запросов в минуту и 10000 запросов в сутки.
+
+```go
+addr, requsites, err := client.GetRequisitesByRawAddress2(ctx, "Республика Дагестан, м.р-н Левашинский, с.п. село Леваши, с Леваши")
+if err != nil {
+    log.Fatalln(err)
+}
+fmt.Println(addr)
+fmt.Println(requsites)
+fmt.Println(client.GetFiasNumRequests()) // количество запросов
+
+addr, requsites, err = client.GetRequisitesByRawAddress2(ctx, "НОВОСИБИРСКАЯ ОБЛ, НОВОСИБИРСК Г, 10-Й ПОРТ-АРТУРСКИЙ ПЕР, Д 17")
+if err != nil {
+    log.Fatalln(err)
+}
+fmt.Println(addr)
+fmt.Println(requsites)
+fmt.Println(client.GetFiasNumRequests()) // количество запросов
+
+```

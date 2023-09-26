@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -27,6 +26,11 @@ const (
 
 type Client struct {
 	httpClient *http.Client
+	fias       struct {
+		Token       string `json:"Token"`
+		Url         string `json:"Url"`
+		numRequests int
+	}
 }
 
 func NewClient(proxy *url.URL) (c *Client) {
@@ -176,110 +180,5 @@ func (c *Client) SearchRegionCodeByIndex(ctx context.Context, index string) (cod
 	}
 
 	code, err = strconv.Atoi(resp.Region)
-	return
-}
-
-// SearchAddrInKladr поиск адреса в КЛАДР.
-func (c *Client) SearchAddrInKladr(ctx context.Context, regionCode int, addr *Address) (addrKladrResponse *AddressKladrResponse, err error) {
-	headers := map[string]string{
-		"User-Agent":       userAgent,
-		"Referer":          serviceNalogUrl + refererKladr,
-		"Cache-Control":    "no-cache",
-		"Pragma":           "no-cache",
-		"X-Requested-With": "XMLHttpRequest",
-	}
-
-	data := &url.Values{
-		"region":      {fmt.Sprintf("%02d", regionCode)},
-		"text":        {addr.Street},
-		"searchCount": {"1"},
-	}
-
-	var b []byte
-	b, err = c.post(ctx, serviceNalogUrl+"/static/kladr-edit.json?c=context_search", data, &headers)
-	if err != nil {
-		err = errors.Join(ErrBadResponse, err)
-		return
-	}
-
-	if err = json.Unmarshal(b, &addrKladrResponse); err != nil {
-		return
-	}
-
-	if addrKladrResponse == nil {
-		err = errors.Join(ErrBadResponse, errors.New("Response content: nil"))
-		return
-	}
-
-	if addrKladrResponse.Error != "" {
-		err = errors.Join(ErrBadResponse, errors.New(addrKladrResponse.Error))
-	}
-	return
-}
-
-type responseOkato struct {
-	Code         string `json:"code"`
-	Ifns         string `json:"ifns"`
-	Okato        string `json:"okatom"`
-	AddressKladr string `json:"text"`
-	Zip          string `json:"zip"`
-}
-
-func (c *Client) getOkato(ctx context.Context, regionCode int, address *Address) (r *responseOkato, err error) {
-	headers := map[string]string{
-		"User-Agent":       userAgent,
-		"Referer":          serviceNalogUrl + refererKladr,
-		"Cache-Control":    "no-cache",
-		"Pragma":           "no-cache",
-		"X-Requested-With": "XMLHttpRequest",
-	}
-
-	data := &url.Values{
-		"c":           {"complete"},
-		"flags":       {"1211"},
-		"zip":         {""},
-		"region":      {fmt.Sprintf("%02d", regionCode)},
-		"addr":        {address.Kladr},
-		"houseGeonim": {"ДОМ"},
-		"house":       {address.House},
-		// К - корпус, ЛИТЕР - литера, СООРУЖЕНИЕ - сооружение, СТР - строение
-		"buildingGeonim": {"К"},
-		"building":       {address.Housing},
-		// КВ - квартира, КОМНАТА - комната, ПОМЕЩЕНИЕ - помещение, ОФИС - офис
-		"flatGeonim":                {"ПОМЕЩЕНИЕ"},
-		"flat":                      {address.Room},
-		"PreventChromeAutocomplete": {""},
-	}
-
-	if address.Building != "" {
-		data.Set("buildingGeonim", "СТР")
-		data.Set("building", address.Building)
-	}
-
-	var b []byte
-	if b, err = c.post(ctx, serviceNalogUrl+"/static/kladr-edit.json", data, &headers); err != nil {
-		return
-	}
-
-	type errResp struct {
-		Error  string              `json:"ERROR"`
-		Errors map[string][]string `json:"ERRORS"`
-		Status int                 `json:"STATUS"`
-	}
-	var resp errResp
-	if err = json.Unmarshal(b, &resp); err != nil {
-		return
-	}
-
-	if resp.Error != "" {
-		msg := ""
-		for k, v := range resp.Errors {
-			msg += fmt.Sprintf("%s: %s\n", k, strings.Join(v, ", "))
-		}
-		err = fmt.Errorf("%s", msg)
-		return
-	}
-
-	err = json.Unmarshal(b, &r)
 	return
 }

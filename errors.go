@@ -11,4 +11,5 @@ var (
 	ErrKladrNotFound   = errors.New("Адрес не найден в КЛАДР.")
 	ErrMultiKladr      = errors.New("Найдено несколько адресов в КЛАДР.")
 	ErrBadResponse     = errors.New("Ошибочный ответ.")
+	ErrInspectionCode  = errors.New("Недопустимый код инспекции.")
 )
