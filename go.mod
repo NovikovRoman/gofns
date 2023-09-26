@@ -1,10 +1,10 @@
 module github.com/NovikovRoman/gofns
 
-go 1.18
+go 1.21
 
 require (
-	github.com/stretchr/testify v1.8.1
-	golang.org/x/net v0.5.0
+	github.com/stretchr/testify v1.8.4
+	golang.org/x/net v0.15.0
 )
 
 require (
