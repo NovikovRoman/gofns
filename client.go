@@ -18,14 +18,28 @@ import (
 )
 
 const (
-	serviceNalogUrl  = "https://service.nalog.ru"
-	userAgent        = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.61 Safari/537.36"
-	timeout          = time.Second * 60
-	handshakeTimeout = time.Second * 10
+	serviceNalogUrl = "https://service.nalog.ru"
+	userAgent       = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.61 Safari/537.36"
 )
+
+type ClientOption func(c *Client)
+
+func WithTimeout(timeout time.Duration) ClientOption {
+	return func(c *Client) {
+		c.timeout = timeout
+	}
+}
+
+func WithProxy(proxy *url.URL) ClientOption {
+	return func(c *Client) {
+		c.proxy = proxy
+	}
+}
 
 type Client struct {
 	httpClient *http.Client
+	proxy      *url.URL
+	timeout    time.Duration
 	fias       struct {
 		Token       string `json:"Token"`
 		Url         string `json:"Url"`
@@ -33,21 +47,26 @@ type Client struct {
 	}
 }
 
-func NewClient(proxy *url.URL) (c *Client) {
-	c = &Client{}
-
-	transport := &http.Transport{
-		TLSHandshakeTimeout: handshakeTimeout,
-		IdleConnTimeout:     timeout,
-		TLSClientConfig:     &tls.Config{InsecureSkipVerify: true},
+func NewClient(opts ...ClientOption) (c *Client) {
+	c = &Client{
+		timeout: time.Second * 60,
 	}
 
-	if proxy != nil {
-		transport.Proxy = http.ProxyURL(proxy)
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	transport := &http.Transport{
+		IdleConnTimeout: c.timeout,
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+
+	if c.proxy != nil {
+		transport.Proxy = http.ProxyURL(c.proxy)
 	}
 
 	c.httpClient = &http.Client{
-		Timeout:   timeout + handshakeTimeout,
+		Timeout:   c.timeout,
 		Transport: transport,
 	}
 	c.httpClient.Jar, _ = cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})

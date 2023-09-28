@@ -32,7 +32,7 @@ func TestClient_invalidPersonalInn(t *testing.T) {
 		},
 	}
 
-	c := NewClient(nil)
+	c := NewClient()
 	ctx := context.Background()
 
 	for _, tt := range tests {

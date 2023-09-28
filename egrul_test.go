@@ -38,7 +38,7 @@ func TestClient_EgrulByInn(t *testing.T) {
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.inn, func(t *testing.T) {
-			c := NewClient(nil)
+			c := NewClient()
 			gotEgruls, err := c.EgrulByInn(ctx, tt.inn)
 
 			if (err != nil) != tt.wantErr {

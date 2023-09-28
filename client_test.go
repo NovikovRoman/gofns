@@ -14,7 +14,7 @@ func TestNewClient(t *testing.T) {
 		err error
 	)
 
-	c = NewClient(nil)
+	c = NewClient()
 	ctx := context.Background()
 	ok, err = c.isUserActionRequired(ctx)
 	if assert.Nil(t, err) {
@@ -58,7 +58,7 @@ func TestClient_SearchRegionCodeByIndex(t *testing.T) {
 		err    error
 	)
 
-	client = NewClient(nil)
+	client = NewClient()
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.index, func(t *testing.T) {

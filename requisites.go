@@ -3,7 +3,6 @@ package gofns
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
@@ -64,17 +63,17 @@ const (
 	fiasApiPoint = "/api/spas/v2.0"
 )
 
-func (c *Client) GetRequisitesByRawAddress(ctx context.Context, addr string) (fAddr fiasAddress, r *Requisites, err error) {
+func (c *Client) GetRequisitesByRawAddress(ctx context.Context, addr string) (fAddr FiasAddress, r *Requisites, err error) {
 	addr = strings.Replace(addr, "РСО-Алания", "Алания", 1)
 
 	// 1 шаг. Найти адрес в fias.nalog.ru
-	var addrs []fiasAddress
-	if addrs, err = c.getFiasAddresses(ctx, addr); err != nil {
+	var addrs []FiasAddress
+	if addrs, err = c.GetFiasAddresses(ctx, addr); err != nil {
 		err = fmt.Errorf("step 1: %w", err)
 		return
 	}
 	if len(addrs) == 0 {
-		err = errors.New("Address not found")
+		err = ErrAddressNotFound
 		return
 	}
 	fAddr = addrs[0]
@@ -86,7 +85,7 @@ func (c *Client) GetRequisitesByRawAddress(ctx context.Context, addr string) (fA
 		return
 	}
 	if len(addrInfo) == 0 {
-		err = errors.New("Address info not found")
+		err = ErrAddressInfoNotFound
 		return
 	}
 
@@ -99,7 +98,34 @@ func (c *Client) GetRequisitesByRawAddress(ctx context.Context, addr string) (fA
 	return
 }
 
-type fiasAddress struct {
+func (c *Client) GetFirstFiasAddress(ctx context.Context, addr string) (fAddr FiasAddress, err error) {
+	var addrs []FiasAddress
+	if addrs, err = c.GetFiasAddresses(ctx, addr); err != nil {
+		err = fmt.Errorf("GetFiasAddresses: %w", err)
+		return
+	}
+	if len(addrs) == 0 {
+		err = ErrAddressNotFound
+		return
+	}
+	fAddr = addrs[0]
+
+	var addrInfo []fiasAddressInfo
+	if addrInfo, err = c.getAddressInfo(ctx, addrs[0]); err != nil {
+		err = fmt.Errorf("step 2: %w", err)
+		return
+	}
+	if len(addrInfo) == 0 {
+		err = ErrAddressInfoNotFound
+		return
+	}
+
+	fAddr = addrs[0]
+	fAddr.Info = addrInfo[0]
+	return
+}
+
+type FiasAddress struct {
 	ObjectID int             `json:"object_id"`
 	FullName string          `json:"full_name"`
 	Info     fiasAddressInfo `json:"info"`
@@ -144,7 +170,7 @@ func (c *Client) GetFiasNumRequests() int {
 	return c.fias.numRequests
 }
 
-func (c *Client) getFiasAddresses(ctx context.Context, addr string) (addrs []fiasAddress, err error) {
+func (c *Client) GetFiasAddresses(ctx context.Context, addr string) (addrs []FiasAddress, err error) {
 	if err = c.getFiasToken(ctx); err != nil {
 		err = fmt.Errorf("FiasAddress getFiasToken: %w", err)
 		return
@@ -173,7 +199,7 @@ func (c *Client) getFiasAddresses(ctx context.Context, addr string) (addrs []fia
 	c.fias.numRequests++
 
 	type hints struct {
-		Hints []fiasAddress `json:"hints"`
+		Hints []FiasAddress `json:"hints"`
 	}
 	var h hints
 	if err = json.Unmarshal(b, &h); err != nil {
@@ -196,7 +222,7 @@ func (c *Client) getFiasAddresses(ctx context.Context, addr string) (addrs []fia
 	return addrs, err
 }
 
-func (c *Client) getAddressInfo(ctx context.Context, addr fiasAddress) (res []fiasAddressInfo, err error) {
+func (c *Client) getAddressInfo(ctx context.Context, addr FiasAddress) (res []fiasAddressInfo, err error) {
 	if err = c.getFiasToken(ctx); err != nil {
 		err = fmt.Errorf("AddressInfo getFiasToken: %w", err)
 		return

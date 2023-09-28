@@ -10,7 +10,7 @@ import (
 )
 
 func TestClient_SearchInn(t *testing.T) {
-	c := NewClient(nil)
+	c := NewClient()
 	ctx := context.Background()
 
 	var (

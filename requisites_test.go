@@ -9,7 +9,7 @@ import (
 )
 
 func TestGetRequisites(t *testing.T) {
-	client := NewClient(nil)
+	client := NewClient()
 
 	tests := []struct {
 		name     string
@@ -66,7 +66,7 @@ func TestGetRequisitesByRawAddress(t *testing.T) {
 		err error
 	)
 
-	client := NewClient(nil)
+	client := NewClient()
 
 	tests := []struct {
 		addr     string
@@ -123,7 +123,7 @@ func TestGetRequisitesByRawAddress(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.addr, func(t *testing.T) {
 			var (
-				addr       fiasAddress
+				addr       FiasAddress
 				requisites *Requisites
 			)
 			addr, requisites, err = client.GetRequisitesByRawAddress(ctx, tt.addr)
@@ -143,7 +143,7 @@ func TestGetRequisitesByRawAddress(t *testing.T) {
 
 func TestClient_GetFiasNumRequests(t *testing.T) {
 	ctx := context.Background()
-	client := NewClient(nil)
+	client := NewClient()
 
 	addr, requsites, err := client.GetRequisitesByRawAddress(ctx, "Дагестан, село Леваши, с Леваши")
 	require.Nil(t, err)
@@ -160,9 +160,9 @@ func TestClient_GetFiasNumRequests(t *testing.T) {
 
 func TestClient_getFiasAddress(t *testing.T) {
 	ctx := context.Background()
-	client := NewClient(nil)
+	client := NewClient()
 
-	addrs, err := client.getFiasAddresses(ctx, "Дагестан, село Леваши, с Леваши")
+	addrs, err := client.GetFiasAddresses(ctx, "Дагестан, село Леваши, с Леваши")
 	require.Nil(t, err)
 	assert.Equal(t, addrs[0].FullName, "Республика Дагестан, м.р-н Левашинский, с.п. село Леваши, с Леваши")
 	assert.Equal(t, 2, client.GetFiasNumRequests())
