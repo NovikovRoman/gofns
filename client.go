@@ -36,15 +36,23 @@ func WithProxy(proxy *url.URL) ClientOption {
 	}
 }
 
+func WithFiasOptions(fo FiasOptions) ClientOption {
+	return func(c *Client) {
+		c.fias = fo
+	}
+}
+
 type Client struct {
 	httpClient *http.Client
 	proxy      *url.URL
 	timeout    time.Duration
-	fias       struct {
-		Token       string `json:"Token"`
-		Url         string `json:"Url"`
-		numRequests int
-	}
+	fias       FiasOptions
+}
+
+type FiasOptions struct {
+	Token       string `json:"Token"`
+	Url         string `json:"Url"`
+	NumRequests int    `json:"NumRequests"`
 }
 
 func NewClient(opts ...ClientOption) (c *Client) {
@@ -71,6 +79,10 @@ func NewClient(opts ...ClientOption) (c *Client) {
 	}
 	c.httpClient.Jar, _ = cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	return
+}
+
+func (c *Client) FiasOptions() FiasOptions {
+	return c.fias
 }
 
 func (c *Client) isUserActionRequired(ctx context.Context) (isAuthorize bool, err error) {
