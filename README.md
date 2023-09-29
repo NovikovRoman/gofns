@@ -10,9 +10,22 @@ go get github.com/NovikovRoman/gofns
 
 ## Создание клиента:
 ```go
-var transport *http.Transport
-…
-c, err := gofns.NewClient(transport)
+c, err := gofns.NewClient()
+if err != nil {
+    log.Fatalln(err)
+}
+```
+Создать клиент с первоначальными ФИАС-параметрами
+(если известен токен и url, для снижения нагрузки на ФИАС):
+
+```go
+fiasOpts := FiasOptions{
+    Token:       "xxx",
+    Url:         "https://…",
+    NumRequests: 10, // сколько уже сделано запросов на данном ip
+}
+
+c, err := gofns.NewClient(WithFiasOptions(fiasOpts))
 if err != nil {
     log.Fatalln(err)
 }
