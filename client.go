@@ -52,7 +52,7 @@ type Client struct {
 type FiasOptions struct {
 	Token       string `json:"Token"`
 	Url         string `json:"Url"`
-	NumRequests int    `json:"NumRequests"`
+	numRequests int
 }
 
 func NewClient(opts ...ClientOption) (c *Client) {

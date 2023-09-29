@@ -167,7 +167,7 @@ func (f fiasError) Error() string {
 }
 
 func (c *Client) GetFiasNumRequests() int {
-	return c.fias.NumRequests
+	return c.fias.numRequests
 }
 
 func (c *Client) GetFiasAddresses(ctx context.Context, addr string) (addrs []FiasAddress, err error) {
@@ -196,7 +196,7 @@ func (c *Client) GetFiasAddresses(ctx context.Context, addr string) (addrs []Fia
 		return
 	}
 
-	c.fias.NumRequests++
+	c.fias.numRequests++
 
 	type hints struct {
 		Hints []FiasAddress `json:"hints"`
@@ -248,7 +248,7 @@ func (c *Client) getAddressInfo(ctx context.Context, addr FiasAddress) (res []fi
 		return
 	}
 
-	c.fias.NumRequests++
+	c.fias.numRequests++
 
 	var resInfo struct {
 		Addresses []fiasAddressInfo `json:"addresses"`
@@ -351,6 +351,6 @@ func (c *Client) getFiasToken(ctx context.Context) (err error) {
 	}
 
 	err = json.Unmarshal(b, &c.fias)
-	c.fias.NumRequests++
+	c.fias.numRequests++
 	return
 }
