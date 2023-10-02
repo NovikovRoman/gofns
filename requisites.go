@@ -347,6 +347,7 @@ func (c *Client) getFiasToken(ctx context.Context) (err error) {
 	var b []byte
 	b, err = c.get(ctx, fmt.Sprintf("%s%s?%s", fiasHost, "/Home/GetSpasSettings", v.Encode()), &headers)
 	if err != nil {
+		err = fmt.Errorf("%v %s", err, b)
 		return
 	}
 
