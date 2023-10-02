@@ -127,6 +127,7 @@ func (c *Client) get(ctx context.Context, u string, headers *map[string]string) 
 		return nil, err
 	}
 
+	req.Close = true
 	for k, v := range *headers {
 		req.Header.Add(k, v)
 	}
@@ -141,6 +142,7 @@ func (c *Client) post(ctx context.Context, urlAction string, data *url.Values, h
 		return nil, err
 	}
 
+	req.Close = true
 	req.PostForm = *data
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded; charset=utf-8")
 	for k, v := range *headers {
