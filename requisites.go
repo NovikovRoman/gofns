@@ -3,13 +3,18 @@ package gofns
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"net/url"
 	"strconv"
 	"strings"
 )
 
-const refererKladr = "/static/kladr2.html?inp=objectAddr&aver=3.42.9&sver=4.39.6&pageStyle=GM2"
+const (
+	refererKladr    = "/static/kladr2.html?inp=objectAddr&aver=3.42.9&sver=4.39.6&pageStyle=GM2"
+	maxFiasAttempts = 3
+)
 
 type Requisites struct {
 	Form struct {
@@ -191,13 +196,13 @@ func (c *Client) GetFiasAddresses(ctx context.Context, addr string) (addrs []Fia
 	}
 	u := fmt.Sprintf("%s%s/GetAddressHint?%s", c.fias.Url, fiasApiPoint, v.Encode())
 
-	var b []byte
-	if b, err = c.get(ctx, u, &headers); err != nil {
+	b, attempts, err := c.attemptsGetFias(ctx, u, headers)
+	if err != nil {
 		err = fmt.Errorf("%w %s", err, b)
 		return
 	}
 
-	c.fias.numRequests++
+	c.fias.numRequests += attempts
 
 	type hints struct {
 		Hints []FiasAddress `json:"hints"`
@@ -244,13 +249,13 @@ func (c *Client) getAddressInfo(ctx context.Context, addr FiasAddress) (res []fi
 	}
 	u := fmt.Sprintf("%s%s/GetAddressItemById?%s", c.fias.Url, fiasApiPoint, v.Encode())
 
-	var b []byte
-	if b, err = c.get(ctx, u, &headers); err != nil {
+	b, attempts, err := c.attemptsGetFias(ctx, u, headers)
+	if err != nil {
 		err = fmt.Errorf("%w %s", err, b)
 		return
 	}
 
-	c.fias.numRequests++
+	c.fias.numRequests += attempts
 
 	var resInfo struct {
 		Addresses []fiasAddressInfo `json:"addresses"`
@@ -346,18 +351,42 @@ func (c *Client) getFiasToken(ctx context.Context) (err error) {
 		"url": {fiasHost + "/"},
 	}
 
-	var b []byte
-	b, err = c.get(ctx, fmt.Sprintf("%s%s?%s", fiasHost, "/Home/GetSpasSettings", v.Encode()), &headers)
+	b, attempts, err := c.attemptsGetFias(ctx, fmt.Sprintf("%s%s?%s", fiasHost, "/Home/GetSpasSettings", v.Encode()), headers)
 	if err != nil {
 		err = fmt.Errorf("%w %s", err, b)
 		return
 	}
 
 	err = json.Unmarshal(b, &c.fias)
-	c.fias.numRequests++
+	c.fias.numRequests += attempts
 	return
 }
 
-func (c *Client) fiasAttemptGet(ctx context.Context, u string, headers map[string]string) (b []byte, attempt int ,err error) {
+var (
+	errBadGateway = errors.New("Bad Gateway")
+)
 
+func (c *Client) attemptsGetFias(
+	ctx context.Context,
+	u string,
+	headers map[string]string,
+) (b []byte, attempts int, err error) {
+	for attempts < maxFiasAttempts {
+		attempts++
+
+		if b, err = c.get(ctx, u, headers); err == nil {
+			return
+		}
+
+		if err == io.EOF || errors.Is(err, errBadGateway) {
+			continue
+		}
+
+		break
+	}
+
+	if err != nil {
+		err = fmt.Errorf("attempts %d %w %s", attempts, err, b)
+	}
+	return
 }
