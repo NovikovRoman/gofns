@@ -3,17 +3,14 @@ package gofns
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const (
-	refererKladr    = "/static/kladr2.html?inp=objectAddr&aver=3.42.9&sver=4.39.6&pageStyle=GM2"
-	maxFiasAttempts = 3
+	refererKladr = "/static/kladr2.html?inp=objectAddr&aver=3.42.9&sver=4.39.6&pageStyle=GM2"
 )
 
 type Requisites struct {
@@ -196,13 +193,13 @@ func (c *Client) GetFiasAddresses(ctx context.Context, addr string) (addrs []Fia
 	}
 	u := fmt.Sprintf("%s%s/GetAddressHint?%s", c.fias.Url, fiasApiPoint, v.Encode())
 
-	b, attempts, err := c.attemptsGetFias(ctx, u, headers)
-	if err != nil {
+	var b []byte
+	if b, err = c.get(ctx, u, headers); err != nil {
 		err = fmt.Errorf("%w %s", err, b)
 		return
 	}
 
-	c.fias.numRequests += attempts
+	c.fias.numRequests++
 
 	type hints struct {
 		Hints []FiasAddress `json:"hints"`
@@ -249,13 +246,13 @@ func (c *Client) getAddressInfo(ctx context.Context, addr FiasAddress) (res []fi
 	}
 	u := fmt.Sprintf("%s%s/GetAddressItemById?%s", c.fias.Url, fiasApiPoint, v.Encode())
 
-	b, attempts, err := c.attemptsGetFias(ctx, u, headers)
-	if err != nil {
+	var b []byte
+	if b, err = c.get(ctx, u, headers); err != nil {
 		err = fmt.Errorf("%w %s", err, b)
 		return
 	}
 
-	c.fias.numRequests += attempts
+	c.fias.numRequests++
 
 	var resInfo struct {
 		Addresses []fiasAddressInfo `json:"addresses"`
@@ -351,46 +348,13 @@ func (c *Client) getFiasToken(ctx context.Context) (err error) {
 		"url": {fiasHost + "/"},
 	}
 
-	b, attempts, err := c.attemptsGetFias(ctx, fmt.Sprintf("%s%s?%s", fiasHost, "/Home/GetSpasSettings", v.Encode()), headers)
+	b, err := c.get(ctx, fmt.Sprintf("%s%s?%s", fiasHost, "/Home/GetSpasSettings", v.Encode()), headers)
 	if err != nil {
 		err = fmt.Errorf("%w %s", err, b)
 		return
 	}
 
 	err = json.Unmarshal(b, &c.fias)
-	c.fias.numRequests += attempts
-	return
-}
-
-var (
-	errProbablyOutdatedToken = errors.New("Вероятно устаревший токен")
-)
-
-func (c *Client) attemptsGetFias(
-	ctx context.Context,
-	u string,
-	headers map[string]string,
-) (b []byte, attempts int, err error) {
-	for attempts < maxFiasAttempts {
-		attempts++
-
-		if b, err = c.get(ctx, u, headers); err == nil {
-			return
-		}
-
-		if strings.Contains(err.Error(), ": EOF") || strings.Contains(err.Error(), ": Bad Gateway") {
-			time.Sleep(time.Second * 3)
-			continue
-		}
-
-		if strings.Contains(err.Error(), ": read: connection reset by peer") {
-			err = errProbablyOutdatedToken
-		}
-		break
-	}
-
-	if err != nil {
-		err = fmt.Errorf("attempts %d %w %s", attempts, err, b)
-	}
+	c.fias.numRequests++
 	return
 }
