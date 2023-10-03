@@ -121,17 +121,16 @@ func (c *Client) setUserAction(ctx context.Context) error {
 	return err
 }
 
-func (c *Client) get(ctx context.Context, u string, headers *map[string]string) ([]byte, error) {
+func (c *Client) get(ctx context.Context, u string, headers map[string]string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	req.Close = true
-	for k, v := range *headers {
+	for k, v := range headers {
 		req.Header.Add(k, v)
 	}
-
 	return c.request(req)
 }
 

@@ -85,7 +85,7 @@ func (c *Client) EgrulByInn(ctx context.Context, inn string) (egruls []*Egrul, e
 
 	timestamp := strconv.Itoa(int(time.Now().Unix()))
 	q := "?r=" + timestamp + "&_=" + timestamp
-	if b, err = c.get(ctx, egrulUrl+"/search-result/"+respToken.T+"/"+q, &headers); err != nil {
+	if b, err = c.get(ctx, egrulUrl+"/search-result/"+respToken.T+"/"+q, headers); err != nil {
 		err = errors.Join(ErrBadResponse, err)
 		return
 	}

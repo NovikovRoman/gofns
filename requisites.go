@@ -357,3 +357,7 @@ func (c *Client) getFiasToken(ctx context.Context) (err error) {
 	c.fias.numRequests++
 	return
 }
+
+func (c *Client) fiasAttemptGet(ctx context.Context, u string, headers map[string]string) (b []byte, attempt int ,err error) {
+
+}
