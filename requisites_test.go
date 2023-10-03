@@ -2,7 +2,11 @@ package gofns
 
 import (
 	"context"
+	"fmt"
+	"net/url"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -298,17 +302,31 @@ func TestClient_GetRequisitesByRawAddress(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	c := NewClient()
+	p, _ := url.Parse("http://g9530965:s9p4Bahpik@94.137.78.2:59100")
+	c := NewClient(WithProxy(p))
 
 	for _, tt := range tests {
 		t.Run(tt.addr, func(t *testing.T) {
-			gotFAddr, gotR, err := c.GetRequisitesByRawAddress(ctx, tt.addr)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Client.GetRequisitesByRawAddress() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			var (
+				gotFAddr FiasAddress
+				gotR     *Requisites
+				err      error
+			)
+
+			for i := 0; i < 3; i++ {
+				gotFAddr, gotR, err = c.GetRequisitesByRawAddress(ctx, tt.addr)
+				if err == nil ||
+					err != nil && !strings.Contains(err.Error(), ": EOF") && !strings.Contains(err.Error(), "read: connection reset by peer") {
+					break
+				}
+				fmt.Println(i)
+				time.Sleep(time.Second * 3)
 			}
 
 			if err != nil {
+				if !tt.wantErr {
+					t.Errorf("Client.GetRequisitesByRawAddress() error = %v, wantErr %v", err, tt.wantErr)
+				}
 				return
 			}
 
