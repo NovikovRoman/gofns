@@ -362,8 +362,7 @@ func (c *Client) getFiasToken(ctx context.Context) (err error) {
 }
 
 var (
-	errBadGateway = errors.New("Bad Gateway")
-	errEOF        = errors.New("EOF")
+	errProbablyOutdatedToken = errors.New("Вероятно устаревший токен")
 )
 
 func (c *Client) attemptsGetFias(
@@ -378,8 +377,12 @@ func (c *Client) attemptsGetFias(
 			return
 		}
 
-		if errors.Is(err, errEOF) || errors.Is(err, errBadGateway) {
+		if strings.Contains(err.Error(), ": EOF") || strings.Contains(err.Error(), ": Bad Gateway") {
 			continue
+		}
+
+		if strings.Contains(err.Error(), ": read: connection reset by peer") {
+			err = errProbablyOutdatedToken
 		}
 		break
 	}
