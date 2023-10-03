@@ -1,6 +1,7 @@
 package gofns
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -201,6 +202,11 @@ func (c *Client) GetFiasAddresses(ctx context.Context, addr string) (addrs []Fia
 
 	c.fias.numRequests++
 
+	if bytes.Contains(b, []byte("Доступ к сервису ограничен")) {
+		err = ErrFiasTokenExpired
+		return
+	}
+
 	type hints struct {
 		Hints []FiasAddress `json:"hints"`
 	}
@@ -253,6 +259,11 @@ func (c *Client) getAddressInfo(ctx context.Context, addr FiasAddress) (res []fi
 	}
 
 	c.fias.numRequests++
+
+	if bytes.Contains(b, []byte("Доступ к сервису ограничен")) {
+		err = ErrFiasTokenExpired
+		return
+	}
 
 	var resInfo struct {
 		Addresses []fiasAddressInfo `json:"addresses"`

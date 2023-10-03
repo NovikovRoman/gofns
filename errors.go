@@ -14,4 +14,5 @@ var (
 	ErrInspectionCode      = errors.New("Недопустимый код инспекции.")
 	ErrAddressNotFound     = errors.New("Адрес не найден.")
 	ErrAddressInfoNotFound = errors.New("Дополнительная информация адреса не найдена.")
+	ErrFiasTokenExpired    = errors.New("Токен ФИАС истек.")
 )
