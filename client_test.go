@@ -75,3 +75,17 @@ func TestClient_SearchRegionCodeByIndex(t *testing.T) {
 		})
 	}
 }
+
+func TestWithFiasOptions(t *testing.T) {
+	fo := FiasOptions{
+		Token:       "token",
+		Url:         "url",
+		numRequests: 5,
+	}
+	opt := WithFiasOptions(fo)
+	client := NewClient(opt)
+	client.fias.numRequests = 5
+
+	assert.Equal(t, fo.Token, client.FiasOptions().Token)
+	assert.Equal(t, fo.Url, client.FiasOptions().Url)
+}
