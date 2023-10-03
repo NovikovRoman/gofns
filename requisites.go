@@ -8,6 +8,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
@@ -378,6 +379,7 @@ func (c *Client) attemptsGetFias(
 		}
 
 		if strings.Contains(err.Error(), ": EOF") || strings.Contains(err.Error(), ": Bad Gateway") {
+			time.Sleep(time.Second * 3)
 			continue
 		}
 
