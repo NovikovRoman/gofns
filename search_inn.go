@@ -93,8 +93,8 @@ func (c *Client) SearchInn(ctx context.Context, person *Person) (inn string, err
 
 	time.Sleep(time.Millisecond * 150)
 
-	attemps := 10
-	for attemps > 0 {
+	attempts := 10
+	for attempts > 0 {
 		var data *innNewProcJsonResponse
 		if data, err = c.requestInn(ctx, firstResp.RequestId, headers); err != nil {
 			return
@@ -106,7 +106,7 @@ func (c *Client) SearchInn(ctx context.Context, person *Person) (inn string, err
 		}
 
 		if data.State < 0 {
-			attemps--
+			attempts--
 			time.Sleep(time.Millisecond * 50)
 			err = errors.Join(ErrUnknownResponse,
 				fmt.Errorf("Ошибка получения данных. State: %f ", data.State))
