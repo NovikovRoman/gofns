@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/url"
 	"strconv"
 	"strings"
@@ -364,6 +363,7 @@ func (c *Client) getFiasToken(ctx context.Context) (err error) {
 
 var (
 	errBadGateway = errors.New("Bad Gateway")
+	errEOF        = errors.New("EOF")
 )
 
 func (c *Client) attemptsGetFias(
@@ -378,10 +378,9 @@ func (c *Client) attemptsGetFias(
 			return
 		}
 
-		if err == io.EOF || errors.Is(err, errBadGateway) {
+		if errors.Is(err, errEOF) || errors.Is(err, errBadGateway) {
 			continue
 		}
-
 		break
 	}
 
