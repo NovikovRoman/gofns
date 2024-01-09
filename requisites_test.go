@@ -46,18 +46,18 @@ func TestGetRequisites(t *testing.T) {
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			requisites, err := client.GetRequisites(ctx, tt.name)
+			requisites, err := client.GetRequisites(ctx, 0, tt.name) // код региона пока необязателен
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetRequisites() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
-			if !tt.wantErr && (requisites == nil || requisites.PayeeDetails.BankName == "") {
+			if !tt.wantErr && (requisites == nil || requisites.Payee.Bank == "") {
 				t.Errorf("GetRequisites() requisites is nil or empty")
 			}
 
-			if !tt.wantErr && requisites.IfnsDetails.IfnsAddr != tt.ifnsAddr {
-				t.Errorf("GetRequisites() IfnsAddr = %v, want %v", requisites.IfnsDetails.IfnsAddr, tt.ifnsAddr)
+			if !tt.wantErr && requisites.Ifns.Addr != tt.ifnsAddr {
+				t.Errorf("GetRequisites() IfnsAddr = %v, want %v", requisites.Ifns.Addr, tt.ifnsAddr)
 			}
 		})
 	}
@@ -152,13 +152,13 @@ func TestClient_GetFiasNumRequests(t *testing.T) {
 	addr, requsites, err := client.GetRequisitesByRawAddress(ctx, "Дагестан, село Леваши, с Леваши")
 	require.Nil(t, err)
 	assert.True(t, addr.FullName != "")
-	assert.True(t, requsites.PayeeDetails.BankName != "")
+	assert.True(t, requsites.Payee.Bank != "")
 	assert.Equal(t, client.GetFiasNumRequests(), 3)
 
 	addr, requsites, err = client.GetRequisitesByRawAddress(ctx, "НОВОСИБИРСКАЯ ОБЛ, НОВОСИБИРСК Г, 10-Й ПОРТ-АРТУРСКИЙ ПЕР, Д 17")
 	require.Nil(t, err)
 	assert.True(t, addr.FullName != "")
-	assert.True(t, requsites.PayeeDetails.BankName != "")
+	assert.True(t, requsites.Payee.Bank != "")
 	assert.Equal(t, client.GetFiasNumRequests(), 5)
 }
 
@@ -330,9 +330,9 @@ func TestClient_GetRequisitesByRawAddress(t *testing.T) {
 				return
 			}
 
-			if tt.wantBank != gotR.PayeeDetails.BankName {
+			if tt.wantBank != gotR.Payee.Bank {
 				t.Errorf("Client.GetRequisitesByRawAddress() gotBank = %v, want %v",
-					gotR.PayeeDetails.BankName, tt.wantBank)
+					gotR.Payee.Bank, tt.wantBank)
 			}
 
 			if tt.wantFias != gotFAddr.FullName {

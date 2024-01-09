@@ -15,6 +15,45 @@ const (
 )
 
 type Requisites struct {
+	Ifns struct {
+		Code    string `json:"ifnsCode"`
+		Name    string `json:"ifnsName"`
+		Inn     string `json:"ifnsInn"`
+		Kpp     string `json:"ifnsKpp"`
+		Addr    string `json:"ifnsAddr"`
+		Phone   string `json:"ifnsPhone"`
+		Comment string `json:"ifnsComment"`
+		Sprof   string `json:"sprof"`
+		Sprou   string `json:"sprou"`
+	} `json:"ifns"`
+
+	Payee struct {
+		Name       string `json:"payeeName"`
+		Inn        string `json:"payeeInn"`
+		Kpp        string `json:"payeeKpp"`
+		Bank       string `json:"bankName"`
+		Bic        string `json:"bankBic"`
+		Acc        string `json:"payeeAcc"`
+		CorrespAcc string `json:"correspAcc"`
+	} `json:"payee"`
+
+	Sprof struct {
+		Code  string `json:"sproCode"`
+		Name  string `json:"sproName"`
+		Addr  string `json:"sproAddr"`
+		Phone string `json:"sproPhone"`
+	} `json:"sprof"`
+
+	Sprou struct {
+		Code  string `json:"sproCode"`
+		Name  string `json:"sproName"`
+		Addr  string `json:"sproAddr"`
+		Phone string `json:"sproPhone"`
+	} `json:"sprou"`
+}
+
+/* //* old response
+type Requisites struct {
 	Form struct {
 		Oktmo string `json:"oktmmf"`
 	} `json:"form"`
@@ -58,7 +97,7 @@ type Requisites struct {
 		SproName    string `json:"sproName"`
 		SproPhone   string `json:"sproPhone"`
 	} `json:"sprouDetails"`
-}
+} */
 
 const (
 	addressType  = 2
@@ -95,7 +134,7 @@ func (c *Client) GetRequisitesByRawAddress(ctx context.Context, addr string) (fA
 	fAddr.Info = addrInfo[0]
 
 	// 3 шаг. Получить реквизиты
-	if r, err = c.GetRequisites(ctx, addrInfo[0].AddressDetails.IfnsFl); err != nil {
+	if r, err = c.GetRequisites(ctx, addrInfo[0].RegionCode, addrInfo[0].AddressDetails.IfnsFl); err != nil {
 		err = fmt.Errorf("step 3: %w", err)
 	}
 	return
@@ -298,6 +337,7 @@ type fiasAddressInfo struct {
 	} `json:"hierarchy"`
 }
 
+/* //* old request
 func (c *Client) GetRequisites(ctx context.Context, ifns string) (requisites *Requisites, err error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
@@ -329,6 +369,44 @@ func (c *Client) GetRequisites(ctx context.Context, ifns string) (requisites *Re
 	}
 
 	if requisites.PayeeDetails.BankName == "" {
+		var snErr struct {
+			Error  string `json:"ERROR"`
+			Status int    `json:"STATUS"`
+		}
+		_ = json.Unmarshal(b, &snErr)
+		if snErr.Error != "" {
+			err = ErrInspectionCode
+		}
+	}
+	return
+} */
+
+func (c *Client) GetRequisites(ctx context.Context, regionCode int, ifns string) (requisites *Requisites, err error) {
+	headers := map[string]string{
+		"User-Agent":       userAgent,
+		"Referer":          serviceNalogUrl + refererKladr,
+		"Cache-Control":    "no-cache",
+		"Pragma":           "no-cache",
+		"X-Requested-With": "XMLHttpRequest",
+	}
+
+	data := &url.Values{
+		"npType":     {"fl"},
+		"objectAddr": {""},
+		"region":     {strconv.Itoa(regionCode)},
+		"ifns":       {ifns},
+	}
+
+	var b []byte
+	if b, err = c.post(ctx, serviceNalogUrl+"/addrno-new-proc.json", data, &headers); err != nil {
+		return
+	}
+
+	if err = json.Unmarshal(b, &requisites); err != nil {
+		return
+	}
+
+	if requisites.Payee.Bank == "" {
 		var snErr struct {
 			Error  string `json:"ERROR"`
 			Status int    `json:"STATUS"`
