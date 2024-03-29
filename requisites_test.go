@@ -316,7 +316,7 @@ func TestClient_GetRequisitesByRawAddress(t *testing.T) {
 			for i := 0; i < 3; i++ {
 				gotFAddr, gotR, err = c.GetRequisitesByRawAddress(ctx, tt.addr)
 				if err == nil ||
-					err != nil && !strings.Contains(err.Error(), ": EOF") && !strings.Contains(err.Error(), "read: connection reset by peer") {
+					!strings.Contains(err.Error(), ": EOF") && !strings.Contains(err.Error(), "read: connection reset by peer") {
 					break
 				}
 				fmt.Println(i)
