@@ -8,13 +8,15 @@
 go get github.com/NovikovRoman/gofns
 ```
 
-## Создание клиента:
+## Создание клиента
+
 ```go
 c, err := gofns.NewClient()
 if err != nil {
     log.Fatalln(err)
 }
 ```
+
 Создать клиент с первоначальными ФИАС-параметрами
 (если известен токен и url, для снижения нагрузки на ФИАС):
 

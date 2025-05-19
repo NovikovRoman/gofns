@@ -65,8 +65,9 @@ func NewClient(opts ...ClientOption) (c *Client) {
 	}
 
 	transport := &http.Transport{
-		IdleConnTimeout: c.timeout,
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		IdleConnTimeout:   c.timeout,
+		TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
+		DisableKeepAlives: true,
 	}
 
 	if c.proxy != nil {
