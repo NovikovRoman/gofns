@@ -52,53 +52,6 @@ type Requisites struct {
 	} `json:"sprou"`
 }
 
-/* //* old response
-type Requisites struct {
-	Form struct {
-		Oktmo string `json:"oktmmf"`
-	} `json:"form"`
-
-	IfnsDetails struct {
-		IfnsAddr    string `json:"ifnsAddr"`
-		IfnsCode    string `json:"ifnsCode"`
-		IfnsComment string `json:"ifnsComment"`
-		IfnsInn     string `json:"ifnsInn"`
-		IfnsKpp     string `json:"ifnsKpp"`
-		IfnsName    string `json:"ifnsName"`
-		IfnsPhone   string `json:"ifnsPhone"`
-		Sprof       string `json:"sprof"`
-		Sprou       string `json:"sprou"`
-	} `json:"ifnsDetails"`
-
-	PayeeDetails struct {
-		BankBic    string `json:"bankBic"`
-		BankName   string `json:"bankName"`
-		CorrespAcc string `json:"correspAcc"`
-		PayeeAcc   string `json:"payeeAcc"`
-		PayeeInn   string `json:"payeeInn"`
-		PayeeKpp   string `json:"payeeKpp"`
-		PayeeName  string `json:"payeeName"`
-	} `json:"payeeDetails"`
-
-	SprofDetails struct {
-		IfnsCode    string `json:"ifnsCode"`
-		SproAddr    string `json:"sproAddr"`
-		SproCode    string `json:"sproCode"`
-		SproComment string `json:"sproComment"`
-		SproName    string `json:"sproName"`
-		SproPhone   string `json:"sproPhone"`
-	} `json:"sprofDetails"`
-
-	SprouDetails struct {
-		IfnsCode    string `json:"ifnsCode"`
-		SproAddr    string `json:"sproAddr"`
-		SproCode    string `json:"sproCode"`
-		SproComment string `json:"sproComment"`
-		SproName    string `json:"sproName"`
-		SproPhone   string `json:"sproPhone"`
-	} `json:"sprouDetails"`
-} */
-
 const (
 	addressType  = 2
 	fiasHost     = "https://fias.nalog.ru"
@@ -174,15 +127,18 @@ type FiasAddress struct {
 }
 
 type fiasError struct {
-	Errors map[string]interface{} `json:"errors"`
-	Title  string                 `json:"title"`
-	Status int                    `json:"status"`
+	Errors map[string]any `json:"errors"`
+	Title  string         `json:"title"`
+	Status int            `json:"status"`
 }
 
 func (f fiasError) IsError(field string) (ok bool, msg string) {
 	v, ok := f.Errors[field]
-	if ok {
-		msg = strings.Join(v.([]string), " ")
+	if !ok {
+		return
+	}
+	if s, isStrings := v.([]string); isStrings {
+		msg = strings.Join(s, " ")
 	}
 	return
 }
@@ -196,8 +152,11 @@ func (f fiasError) ErrorByFields(fields ...string) (ok bool, msg string) {
 
 		ok = yes
 		msg += field + ": "
-		for _, vv := range v.([]interface{}) {
-			msg += vv.(string) + " "
+		items, _ := v.([]interface{})
+		for _, vv := range items {
+			if s, isString := vv.(string); isString {
+				msg += s + " "
+			}
 		}
 		msg += "\n"
 	}
@@ -337,50 +296,6 @@ type fiasAddressInfo struct {
 	} `json:"hierarchy"`
 }
 
-/* //* old request
-func (c *Client) GetRequisites(ctx context.Context, ifns string) (requisites *Requisites, err error) {
-	headers := map[string]string{
-		"User-Agent":       userAgent,
-		"Referer":          serviceNalogUrl + refererKladr,
-		"Cache-Control":    "no-cache",
-		"Pragma":           "no-cache",
-		"X-Requested-With": "XMLHttpRequest",
-	}
-
-	data := &url.Values{
-		"c":                         {"next"},
-		"step":                      {"1"},
-		"npKind":                    {"fl"},
-		"objectAddr":                {""},
-		"objectAddr_zip":            {""},
-		"objectAddr_ifns":           {""},
-		"objectAddr_okatom":         {""},
-		"ifns":                      {ifns},
-		"oktmmf":                    {""},
-		"PreventChromeAutocomplete": {""},
-	}
-	var b []byte
-	if b, err = c.post(ctx, serviceNalogUrl+"/addrno-proc.json", data, &headers); err != nil {
-		return
-	}
-
-	if err = json.Unmarshal(b, &requisites); err != nil {
-		return
-	}
-
-	if requisites.PayeeDetails.BankName == "" {
-		var snErr struct {
-			Error  string `json:"ERROR"`
-			Status int    `json:"STATUS"`
-		}
-		_ = json.Unmarshal(b, &snErr)
-		if snErr.Error != "" {
-			err = ErrInspectionCode
-		}
-	}
-	return
-} */
-
 func (c *Client) GetRequisites(ctx context.Context, regionCode int, ifns string) (requisites *Requisites, err error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
@@ -406,7 +321,7 @@ func (c *Client) GetRequisites(ctx context.Context, regionCode int, ifns string)
 		return
 	}
 
-	if requisites.Payee.Bank == "" {
+	if requisites != nil && requisites.Payee.Bank == "" {
 		var snErr struct {
 			Error  string `json:"ERROR"`
 			Status int    `json:"STATUS"`

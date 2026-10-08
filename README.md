@@ -8,30 +8,39 @@
 go get github.com/NovikovRoman/gofns
 ```
 
+Все методы клиента принимают `context.Context` первым аргументом.
+
 ## Создание клиента
 
 ```go
-c, err := gofns.NewClient()
-if err != nil {
-    log.Fatalln(err)
-}
+client := gofns.NewClient()
+```
+
+Опции клиента:
+
+```go
+proxy, _ := url.Parse("http://user:pass@host:port")
+
+client := gofns.NewClient(
+    gofns.WithTimeout(30*time.Second), // по умолчанию 60 секунд
+    gofns.WithProxy(proxy),
+)
 ```
 
 Создать клиент с первоначальными ФИАС-параметрами
 (если известен токен и url, для снижения нагрузки на ФИАС):
 
 ```go
-fiasOpts := FiasOptions{
-    Token:       "xxx",
-    Url:         "https://…",
-    NumRequests: 10, // сколько уже сделано запросов на данном ip
+fiasOpts := gofns.FiasOptions{
+    Token: "xxx",
+    Url:   "https://…",
 }
 
-c, err := gofns.NewClient(WithFiasOptions(fiasOpts))
-if err != nil {
-    log.Fatalln(err)
-}
+client := gofns.NewClient(gofns.WithFiasOptions(fiasOpts))
 ```
+
+Текущие ФИАС-параметры можно получить через `client.FiasOptions()`
+и сохранить для следующего запуска.
 
 ## Поиск ИНН
 
@@ -53,7 +62,7 @@ person := &gofns.Person{
     Birthday:   birthday,
     Document:   passport,
 }
-inn, err := client.SearchIndividualInn(person)
+inn, err := client.SearchInn(ctx, person)
 if err != nil {
     log.Fatalln(err)
 }
@@ -61,35 +70,93 @@ if err != nil {
 fmt.Println(inn)
 ```
 
-## Поиск информации из ЕГРЮЛ/ЕГРИП
+Типы документов: `DocumentPassportRussia`, `DocumentPassportUSSR`, `DocumentBirthCertificate`,
+`DocumentPassportForeign`, `DocumentResidence`, `DocumentTemporaryResidence`,
+`DocumentCertificateTemporaryAsylum`, `DocumentBirthCertificateForeign`, `DocumentResidenceForeign`.
+
+## Проверка недействительности ИНН физического лица
 
 ```go
-res, err := client.EgrulByInn("2130008501")
+invalid, date, err := client.InvalidPersonalInn(ctx, "110201800535")
 if err != nil {
     log.Fatalln(err)
 }
-fmt.Println(res)
+if invalid {
+    fmt.Println("ИНН недействителен с", date.Format(gofns.LayoutDate))
+}
 ```
+
+## Поиск информации из ЕГРЮЛ/ЕГРИП
+
+```go
+res, err := client.EgrulByInn(ctx, "2130008501")
+if err != nil {
+    var captchaErr *gofns.CaptchaRequiredError
+    if errors.As(err, &captchaErr) {
+        // сайт требует ввод капчи
+    }
+    log.Fatalln(err)
+}
+
+for _, e := range res {
+    fmt.Println(e.Type, e.Name, e.Inn, e.Ogrn, e.Kpp, e.Director, e.Registration)
+}
+```
+
+Поля `Egrul`: `Type` (`gofns.LegalEntity` / `gofns.IndividualEntity`), `ShortName`, `Name`,
+`Director`, `Inn`, `Ogrn`, `Kpp`, `Region`, `Registration`, `Termination` (`nil`, если не прекращено), `Token`.
 
 ## Поиск реквизитов по адресу
 
 [!] Необходимо следить за количеством запросов. 100 запросов в минуту и 10000 запросов в сутки.
 
 ```go
-addr, requsites, err := client.GetRequisitesByRawAddress2(ctx, "Республика Дагестан, м.р-н Левашинский, с.п. село Леваши, с Леваши")
+addr, requisites, err := client.GetRequisitesByRawAddress(ctx, "Республика Дагестан, м.р-н Левашинский, с.п. село Леваши, с Леваши")
 if err != nil {
     log.Fatalln(err)
 }
-fmt.Println(addr)
-fmt.Println(requsites)
+fmt.Println(addr.FullName)
+fmt.Println(requisites.Ifns.Name, requisites.Payee.Bank)
 fmt.Println(client.GetFiasNumRequests()) // количество запросов
 
-addr, requsites, err = client.GetRequisitesByRawAddress2(ctx, "НОВОСИБИРСКАЯ ОБЛ, НОВОСИБИРСК Г, 10-Й ПОРТ-АРТУРСКИЙ ПЕР, Д 17")
+addr, requisites, err = client.GetRequisitesByRawAddress(ctx, "НОВОСИБИРСКАЯ ОБЛ, НОВОСИБИРСК Г, 10-Й ПОРТ-АРТУРСКИЙ ПЕР, Д 17")
 if err != nil {
     log.Fatalln(err)
 }
-fmt.Println(addr)
-fmt.Println(requsites)
+fmt.Println(addr.FullName)
+fmt.Println(requisites.Ifns.Name, requisites.Payee.Bank)
 fmt.Println(client.GetFiasNumRequests()) // количество запросов
-
 ```
+
+Отдельные шаги:
+
+```go
+// адреса из ФИАС по строке
+addrs, err := client.GetFiasAddresses(ctx, "Дагестан, село Леваши")
+
+// первый найденный адрес с подробной информацией (код региона, ИФНС, ОКТМО и т.д.)
+addr, err := client.GetFirstFiasAddress(ctx, "Дагестан, село Леваши")
+
+// реквизиты по коду региона и коду ИФНС
+requisites, err := client.GetRequisites(ctx, addr.Info.RegionCode, addr.Info.AddressDetails.IfnsFl)
+```
+
+## Код региона
+
+По почтовому индексу (запрос к сайту ФНС, `0` — если не найден):
+
+```go
+code, err := client.SearchRegionCodeByIndex(ctx, "610004") // 43
+```
+
+По строке адреса (без запросов, по названиям регионов и крупных городов, `0` — если не определён):
+
+```go
+code := gofns.DetermineRegionCodeByAddress("г. Киров, ул. Ленина, д. 1") // 43
+```
+
+## Ошибки
+
+Методы возвращают ошибки, которые можно проверить через `errors.Is`:
+`ErrTooManyRequests`, `ErrBadArguments`, `ErrUnknownResponse`, `ErrBadResponse`,
+`ErrInspectionCode`, `ErrAddressNotFound`, `ErrAddressInfoNotFound`, `ErrFiasTokenExpired`.

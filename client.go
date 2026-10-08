@@ -158,7 +158,7 @@ func (c *Client) request(req *http.Request) (body []byte, err error) {
 	}
 
 	if resp == nil {
-		err = errors.New("Response is nil. ")
+		err = errors.New("response is nil")
 		return
 	}
 
@@ -185,7 +185,6 @@ func (c *Client) SearchRegionCodeByIndex(ctx context.Context, index string) (cod
 		"Cache-Control":    "no-cache",
 		"Pragma":           "no-cache",
 		"X-Requested-With": "XMLHttpRequest",
-		"Accept-Encoding":  "gzip, deflate, br",
 	}
 
 	data := &url.Values{

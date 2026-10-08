@@ -34,7 +34,6 @@ func TestClient_EgrulByInn(t *testing.T) {
 			wantErr: false,
 		},
 	}
-
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.inn, func(t *testing.T) {
@@ -47,6 +46,38 @@ func TestClient_EgrulByInn(t *testing.T) {
 			}
 
 			require.Len(t, gotEgruls, tt.len)
+		})
+	}
+}
+
+func TestClient_GetAddress(t *testing.T) {
+	tests := []string{
+		"5904084719",
+		"1831038252",
+		"6152001105",
+	}
+	ctx := context.Background()
+	for _, inn := range tests {
+		t.Run(inn, func(t *testing.T) {
+			c := NewClient()
+			egruls, err := c.EgrulByInn(ctx, inn)
+			require.Nil(t, err, err)
+
+			var eg *Egrul
+			for i := range egruls {
+				if egruls[i].Termination == nil {
+					eg = &egruls[i]
+					break
+				}
+			}
+			if eg == nil {
+				t.Skip("нет действующего юр. лица")
+			}
+
+			addr, err := c.GetAddress(ctx, *eg)
+			require.Nil(t, err, err)
+			require.NotEmpty(t, addr)
+			t.Logf("%s: %s", inn, addr)
 		})
 	}
 }

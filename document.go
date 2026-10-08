@@ -48,7 +48,7 @@ var (
 type Document interface {
 	String() string
 	Type() string
-	DateIssue() time.Time
+	DateIssue() *time.Time
 	DateIssueString() string
 }
 
@@ -66,8 +66,8 @@ func (d *document) Type() string {
 	return d.documentType
 }
 
-func (d *document) DateIssue() time.Time {
-	return *d.date
+func (d *document) DateIssue() *time.Time {
+	return d.date
 }
 
 func (d *document) DateIssueString() string {
@@ -86,7 +86,7 @@ func NewDocument(number string, documentType string, dateIssue *time.Time) (d Do
 
 	fn, ok = formatCheck[documentType]
 	if !ok {
-		return nil, errors.New("Неизвестный тип документа. ")
+		return nil, errors.New("неизвестный тип документа")
 	}
 
 	ok, canonicalNumber = fn(number)
@@ -100,7 +100,6 @@ func NewDocument(number string, documentType string, dateIssue *time.Time) (d Do
 		documentType: documentType,
 		date:         dateIssue,
 	}
-
 	return
 }
 
