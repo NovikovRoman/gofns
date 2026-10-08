@@ -16,16 +16,25 @@ go get github.com/NovikovRoman/gofns
 client := gofns.NewClient()
 ```
 
+По умолчанию создается клиент с таймаутом 60 секунд и транспортом на основе `http.DefaultTransport`
+(пул соединений, HTTP/2, прокси из переменных окружения).
+
 Опции клиента:
 
 ```go
 proxy, _ := url.Parse("http://user:pass@host:port")
 
 client := gofns.NewClient(
-    gofns.WithTimeout(30*time.Second), // по умолчанию 60 секунд
+    gofns.WithHTTPClient(&http.Client{Timeout: 30 * time.Second}), // свой http-клиент
     gofns.WithProxy(proxy),
 )
 ```
+
+Свой клиент копируется и не изменяется. Если у него не задан cookie jar — он будет создан,
+если не задан `Transport` — используется транспорт по умолчанию.
+Прокси применяется, если `Transport` клиента — `*http.Transport` (транспорт клонируется).
+
+Таймаут отдельного запроса можно задать через `context.WithTimeout`.
 
 Создать клиент с первоначальными ФИАС-параметрами
 (если известен токен и url, для снижения нагрузки на ФИАС):

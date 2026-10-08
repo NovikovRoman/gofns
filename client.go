@@ -20,16 +20,24 @@ import (
 const (
 	serviceNalogUrl = "https://service.nalog.ru"
 	userAgent       = "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.61 Safari/537.36"
+
+	defaultTimeout = 60 * time.Second
 )
 
 type ClientOption func(c *Client)
 
-func WithTimeout(timeout time.Duration) ClientOption {
+// WithHTTPClient использовать свой http-клиент.
+// Клиент копируется и не изменяется. Если у него нет cookie jar, он будет создан.
+// Если Transport не задан, используется транспорт по умолчанию.
+func WithHTTPClient(hc *http.Client) ClientOption {
 	return func(c *Client) {
-		c.timeout = timeout
+		c.httpClient = hc
 	}
 }
 
+// WithProxy использовать прокси.
+// Применяется и к клиенту по умолчанию, и к клиенту из WithHTTPClient,
+// если его Transport — *http.Transport (транспорт клонируется).
 func WithProxy(proxy *url.URL) ClientOption {
 	return func(c *Client) {
 		c.proxy = proxy
@@ -45,7 +53,6 @@ func WithFiasOptions(fo FiasOptions) ClientOption {
 type Client struct {
 	httpClient *http.Client
 	proxy      *url.URL
-	timeout    time.Duration
 	fias       FiasOptions
 }
 
@@ -56,29 +63,44 @@ type FiasOptions struct {
 }
 
 func NewClient(opts ...ClientOption) (c *Client) {
-	c = &Client{
-		timeout: time.Second * 60,
-	}
-
+	c = &Client{}
 	for _, opt := range opts {
 		opt(c)
 	}
 
-	transport := &http.Transport{
-		IdleConnTimeout: c.timeout,
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	hc := http.Client{Timeout: defaultTimeout}
+	if c.httpClient != nil {
+		hc = *c.httpClient
+	}
+
+	if hc.Transport == nil {
+		hc.Transport = newTransport()
 	}
 
 	if c.proxy != nil {
-		transport.Proxy = http.ProxyURL(c.proxy)
+		if t, ok := hc.Transport.(*http.Transport); ok {
+			t = t.Clone()
+			t.Proxy = http.ProxyURL(c.proxy)
+			hc.Transport = t
+		}
 	}
 
-	c.httpClient = &http.Client{
-		Timeout:   c.timeout,
-		Transport: transport,
+	if hc.Jar == nil {
+		hc.Jar, _ = cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
 	}
-	c.httpClient.Jar, _ = cookiejar.New(&cookiejar.Options{PublicSuffixList: publicsuffix.List})
+
+	c.httpClient = &hc
 	return
+}
+
+// newTransport транспорт по умолчанию: настройки http.DefaultTransport
+// (пул соединений, HTTP/2, таймауты dial/TLS, прокси из окружения).
+func newTransport() *http.Transport {
+	t := http.DefaultTransport.(*http.Transport).Clone()
+	t.TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	t.MaxIdleConnsPerHost = 10
+	t.ResponseHeaderTimeout = 30 * time.Second
+	return t
 }
 
 func (c *Client) FiasOptions() FiasOptions {

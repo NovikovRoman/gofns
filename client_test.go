@@ -2,7 +2,10 @@ package gofns
 
 import (
 	"context"
+	"net/http"
+	"net/url"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -74,6 +77,41 @@ func TestClient_SearchRegionCodeByIndex(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestNewClient_Default(t *testing.T) {
+	c := NewClient()
+	assert.Equal(t, defaultTimeout, c.httpClient.Timeout)
+	assert.NotNil(t, c.httpClient.Jar)
+
+	tr, ok := c.httpClient.Transport.(*http.Transport)
+	if assert.True(t, ok) {
+		assert.True(t, tr.TLSClientConfig.InsecureSkipVerify)
+		assert.True(t, tr.ForceAttemptHTTP2)
+	}
+}
+
+func TestWithHTTPClient(t *testing.T) {
+	userTransport := &http.Transport{}
+	hc := &http.Client{Timeout: time.Second, Transport: userTransport}
+	proxy, _ := url.Parse("http://127.0.0.1:3128")
+
+	c := NewClient(WithHTTPClient(hc), WithProxy(proxy))
+	assert.Equal(t, time.Second, c.httpClient.Timeout)
+	assert.NotNil(t, c.httpClient.Jar)
+
+	tr, ok := c.httpClient.Transport.(*http.Transport)
+	if assert.True(t, ok) {
+		assert.NotSame(t, userTransport, tr)
+		p, err := tr.Proxy(&http.Request{URL: &url.URL{Scheme: "https", Host: "service.nalog.ru"}})
+		if assert.Nil(t, err) {
+			assert.Equal(t, proxy.String(), p.String())
+		}
+	}
+
+	// клиент пользователя не изменен
+	assert.Nil(t, hc.Jar)
+	assert.Nil(t, userTransport.Proxy)
 }
 
 func TestWithFiasOptions(t *testing.T) {
