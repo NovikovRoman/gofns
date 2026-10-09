@@ -58,12 +58,12 @@ const (
 	fiasApiPoint = "/api/spas/v2.0"
 )
 
-func (c *Client) GetRequisitesByRawAddress(ctx context.Context, addr string) (fAddr FiasAddress, r *Requisites, err error) {
+func (c *Client) RequisitesByRawAddress(ctx context.Context, addr string) (fAddr FiasAddress, r *Requisites, err error) {
 	addr = strings.Replace(addr, "РСО-Алания", "Алания", 1)
 
 	// 1 шаг. Найти адрес в fias.nalog.ru
 	var addrs []FiasAddress
-	if addrs, err = c.GetFiasAddresses(ctx, addr); err != nil {
+	if addrs, err = c.FiasAddresses(ctx, addr); err != nil {
 		err = fmt.Errorf("step 1: %w", err)
 		return
 	}
@@ -87,16 +87,16 @@ func (c *Client) GetRequisitesByRawAddress(ctx context.Context, addr string) (fA
 	fAddr.Info = addrInfo[0]
 
 	// 3 шаг. Получить реквизиты
-	if r, err = c.GetRequisites(ctx, addrInfo[0].RegionCode, addrInfo[0].AddressDetails.IfnsFl); err != nil {
+	if r, err = c.Requisites(ctx, addrInfo[0].RegionCode, addrInfo[0].AddressDetails.IfnsFl); err != nil {
 		err = fmt.Errorf("step 3: %w", err)
 	}
 	return
 }
 
-func (c *Client) GetFirstFiasAddress(ctx context.Context, addr string) (fAddr FiasAddress, err error) {
+func (c *Client) FirstFiasAddress(ctx context.Context, addr string) (fAddr FiasAddress, err error) {
 	var addrs []FiasAddress
-	if addrs, err = c.GetFiasAddresses(ctx, addr); err != nil {
-		err = fmt.Errorf("GetFiasAddresses: %w", err)
+	if addrs, err = c.FiasAddresses(ctx, addr); err != nil {
+		err = fmt.Errorf("FiasAddresses: %w", err)
 		return
 	}
 	if len(addrs) == 0 {
@@ -132,17 +132,6 @@ type fiasError struct {
 	Status int            `json:"status"`
 }
 
-func (f fiasError) IsError(field string) (ok bool, msg string) {
-	v, ok := f.Errors[field]
-	if !ok {
-		return
-	}
-	if s, isStrings := v.([]string); isStrings {
-		msg = strings.Join(s, " ")
-	}
-	return
-}
-
 func (f fiasError) ErrorByFields(fields ...string) (ok bool, msg string) {
 	for _, field := range fields {
 		v, yes := f.Errors[field]
@@ -152,7 +141,7 @@ func (f fiasError) ErrorByFields(fields ...string) (ok bool, msg string) {
 
 		ok = yes
 		msg += field + ": "
-		items, _ := v.([]interface{})
+		items, _ := v.([]any)
 		for _, vv := range items {
 			if s, isString := vv.(string); isString {
 				msg += s + " "
@@ -167,11 +156,11 @@ func (f fiasError) Error() string {
 	return fmt.Sprintf("[%d] %s", f.Status, f.Title)
 }
 
-func (c *Client) GetFiasNumRequests() int {
+func (c *Client) FiasNumRequests() int {
 	return c.fias.numRequests
 }
 
-func (c *Client) GetFiasAddresses(ctx context.Context, addr string) (addrs []FiasAddress, err error) {
+func (c *Client) FiasAddresses(ctx context.Context, addr string) (addrs []FiasAddress, err error) {
 	if err = c.getFiasToken(ctx); err != nil {
 		err = fmt.Errorf("FiasAddress getFiasToken: %w", err)
 		return
@@ -296,7 +285,7 @@ type fiasAddressInfo struct {
 	} `json:"hierarchy"`
 }
 
-func (c *Client) GetRequisites(ctx context.Context, regionCode int, ifns string) (requisites *Requisites, err error) {
+func (c *Client) Requisites(ctx context.Context, regionCode int, ifns string) (*Requisites, error) {
 	headers := map[string]string{
 		"User-Agent":       userAgent,
 		"Referer":          serviceNalogUrl + refererKladr,
@@ -312,16 +301,20 @@ func (c *Client) GetRequisites(ctx context.Context, regionCode int, ifns string)
 		"ifns":       {ifns},
 	}
 
-	var b []byte
-	if b, err = c.post(ctx, serviceNalogUrl+"/addrno-new-proc.json", data, &headers); err != nil {
-		return
+	b, err := c.post(ctx, serviceNalogUrl+"/addrno-new-proc.json", data, &headers)
+	if err != nil {
+		return nil, err
+	}
+	if len(b) == 0 {
+		return nil, ErrBadResponse
 	}
 
+	var requisites *Requisites
 	if err = json.Unmarshal(b, &requisites); err != nil {
-		return
+		return nil, err
 	}
 
-	if requisites != nil && requisites.Payee.Bank == "" {
+	if requisites.Payee.Bank == "" {
 		var snErr struct {
 			Error  string `json:"ERROR"`
 			Status int    `json:"STATUS"`
@@ -331,7 +324,7 @@ func (c *Client) GetRequisites(ctx context.Context, regionCode int, ifns string)
 			err = ErrInspectionCode
 		}
 	}
-	return
+	return requisites, nil
 }
 
 func (c *Client) getFiasToken(ctx context.Context) (err error) {

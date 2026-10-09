@@ -100,9 +100,9 @@ func (c *Client) EgrulByInn(ctx context.Context, inn string) (egruls []Egrul, er
 
 var reEgrulAddress = regexp.MustCompile(`(?si)\d+\s+Адрес\s+юридического\s+лица\s+(.+?)\n\d+\s+ГРН`)
 
-func (c *Client) GetAddress(ctx context.Context, eg Egrul) (string, error) {
+func (c *Client) LegalAddress(ctx context.Context, eg Egrul) (string, error) {
 	if len(eg.Inn) != 10 {
-		return "", nil
+		return "", ErrBadArguments
 	}
 
 	headers := map[string]string{
@@ -131,7 +131,7 @@ func (c *Client) GetAddress(ctx context.Context, eg Egrul) (string, error) {
 		select {
 		case <-ctx.Done():
 			return "", ctx.Err()
-		case <-time.After(time.Millisecond * 150):
+		case <-time.After(time.Millisecond * 200):
 		}
 
 		var statusResp struct {

@@ -50,7 +50,7 @@ func TestClient_EgrulByInn(t *testing.T) {
 	}
 }
 
-func TestClient_GetAddress(t *testing.T) {
+func TestClient_LegalAddress(t *testing.T) {
 	tests := []string{
 		"5904084719",
 		"1831038252",
@@ -74,7 +74,7 @@ func TestClient_GetAddress(t *testing.T) {
 				t.Skip("нет действующего юр. лица")
 			}
 
-			addr, err := c.GetAddress(ctx, *eg)
+			addr, err := c.LegalAddress(ctx, *eg)
 			require.Nil(t, err, err)
 			require.NotEmpty(t, addr)
 			t.Logf("%s: %s", inn, addr)

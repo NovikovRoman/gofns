@@ -91,9 +91,14 @@ func (c *Client) SearchInn(ctx context.Context, person *Person) (inn string, err
 		return
 	}
 
-	time.Sleep(time.Millisecond * 150)
-
 	for attempts := 10; attempts > 0; attempts-- {
+		select {
+		case <-ctx.Done():
+			err = ctx.Err()
+			return
+		case <-time.After(time.Millisecond * 150):
+		}
+
 		var data *innNewProcJsonResponse
 		if data, err = c.requestInn(ctx, firstResp.RequestId, headers); err != nil {
 			return
@@ -106,13 +111,6 @@ func (c *Client) SearchInn(ctx context.Context, person *Person) (inn string, err
 
 		err = errors.Join(ErrUnknownResponse,
 			fmt.Errorf("ошибка получения данных. State: %f ", data.State))
-
-		select {
-		case <-ctx.Done():
-			err = ctx.Err()
-			return
-		case <-time.After(time.Millisecond * 50):
-		}
 	}
 	return
 }

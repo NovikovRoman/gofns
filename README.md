@@ -120,34 +120,34 @@ for _, e := range res {
 [!] Необходимо следить за количеством запросов. 100 запросов в минуту и 10000 запросов в сутки.
 
 ```go
-addr, requisites, err := client.GetRequisitesByRawAddress(ctx, "Республика Дагестан, м.р-н Левашинский, с.п. село Леваши, с Леваши")
+addr, requisites, err := client.RequisitesByRawAddress(ctx, "Республика Дагестан, м.р-н Левашинский, с.п. село Леваши, с Леваши")
 if err != nil {
     log.Fatalln(err)
 }
 fmt.Println(addr.FullName)
 fmt.Println(requisites.Ifns.Name, requisites.Payee.Bank)
-fmt.Println(client.GetFiasNumRequests()) // количество запросов
+fmt.Println(client.FiasNumRequests()) // количество запросов
 
-addr, requisites, err = client.GetRequisitesByRawAddress(ctx, "НОВОСИБИРСКАЯ ОБЛ, НОВОСИБИРСК Г, 10-Й ПОРТ-АРТУРСКИЙ ПЕР, Д 17")
+addr, requisites, err = client.RequisitesByRawAddress(ctx, "НОВОСИБИРСКАЯ ОБЛ, НОВОСИБИРСК Г, 10-Й ПОРТ-АРТУРСКИЙ ПЕР, Д 17")
 if err != nil {
     log.Fatalln(err)
 }
 fmt.Println(addr.FullName)
 fmt.Println(requisites.Ifns.Name, requisites.Payee.Bank)
-fmt.Println(client.GetFiasNumRequests()) // количество запросов
+fmt.Println(client.FiasNumRequests()) // количество запросов
 ```
 
 Отдельные шаги:
 
 ```go
 // адреса из ФИАС по строке
-addrs, err := client.GetFiasAddresses(ctx, "Дагестан, село Леваши")
+addrs, err := client.FiasAddresses(ctx, "Дагестан, село Леваши")
 
 // первый найденный адрес с подробной информацией (код региона, ИФНС, ОКТМО и т.д.)
-addr, err := client.GetFirstFiasAddress(ctx, "Дагестан, село Леваши")
+addr, err := client.FirstFiasAddress(ctx, "Дагестан, село Леваши")
 
 // реквизиты по коду региона и коду ИФНС
-requisites, err := client.GetRequisites(ctx, addr.Info.RegionCode, addr.Info.AddressDetails.IfnsFl)
+requisites, err := client.Requisites(ctx, addr.Info.RegionCode, addr.Info.AddressDetails.IfnsFl)
 ```
 
 ## Код региона

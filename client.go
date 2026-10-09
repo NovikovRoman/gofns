@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -189,14 +190,14 @@ func (c *Client) request(req *http.Request) (body []byte, err error) {
 	}()
 
 	body, err = io.ReadAll(resp.Body)
-	return
-}
+	if err != nil {
+		return
+	}
 
-type AddressKladrResponse struct {
-	Items   []string `json:"items,omitempty"`
-	Error   string   `json:"ERROR"`
-	Status  int      `json:"STATUS"`
-	Content []byte   `json:"-"`
+	if resp.StatusCode != http.StatusOK {
+		err = fmt.Errorf("HTTP status code: %d %s", resp.StatusCode, string(body))
+	}
+	return
 }
 
 // SearchRegionCodeByIndex поиск кода региона по почтовому индексу.

@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetRequisites(t *testing.T) {
+func TestRequisites(t *testing.T) {
 	client := NewClient()
 
 	tests := []struct {
@@ -46,26 +46,26 @@ func TestGetRequisites(t *testing.T) {
 	ctx := context.Background()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			requisites, err := client.GetRequisites(ctx, 0, tt.name) // код региона пока необязателен
+			requisites, err := client.Requisites(ctx, 0, tt.name) // код региона пока необязателен
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetRequisites() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("Requisites() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			if !tt.wantErr && (requisites == nil || requisites.Payee.Bank == "") {
-				t.Errorf("GetRequisites() requisites is nil or empty")
+				t.Errorf("Requisites() requisites is nil or empty")
 			}
 
 			if !tt.wantErr && requisites.Ifns.Addr != tt.ifnsAddr {
-				t.Errorf("GetRequisites() IfnsAddr = %v, want %v", requisites.Ifns.Addr, tt.ifnsAddr)
+				t.Errorf("Requisites() IfnsAddr = %v, want %v", requisites.Ifns.Addr, tt.ifnsAddr)
 			}
 		})
 	}
 
-	assert.Equal(t, 0, client.GetFiasNumRequests())
+	assert.Equal(t, 0, client.FiasNumRequests())
 }
 
-func TestGetRequisitesByRawAddress(t *testing.T) {
+func TestRequisitesByRawAddress(t *testing.T) {
 	var (
 		err error
 	)
@@ -130,10 +130,10 @@ func TestGetRequisitesByRawAddress(t *testing.T) {
 				addr       FiasAddress
 				requisites *Requisites
 			)
-			addr, requisites, err = client.GetRequisitesByRawAddress(ctx, tt.addr)
+			addr, requisites, err = client.RequisitesByRawAddress(ctx, tt.addr)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GetRequisitesByRawAddress() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("RequisitesByRawAddress() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 			assert.Equal(t, addr.FullName, tt.wantName)
@@ -142,37 +142,37 @@ func TestGetRequisitesByRawAddress(t *testing.T) {
 		})
 	}
 
-	assert.Equal(t, 15, client.GetFiasNumRequests())
+	assert.Equal(t, 15, client.FiasNumRequests())
 }
 
-func TestClient_GetFiasNumRequests(t *testing.T) {
+func TestClient_FiasNumRequests(t *testing.T) {
 	ctx := context.Background()
 	client := NewClient()
 
-	addr, requsites, err := client.GetRequisitesByRawAddress(ctx, "Дагестан, село Леваши, с Леваши")
+	addr, requsites, err := client.RequisitesByRawAddress(ctx, "Дагестан, село Леваши, с Леваши")
 	require.Nil(t, err)
 	assert.True(t, addr.FullName != "")
 	assert.True(t, requsites.Payee.Bank != "")
-	assert.Equal(t, client.GetFiasNumRequests(), 3)
+	assert.Equal(t, client.FiasNumRequests(), 3)
 
-	addr, requsites, err = client.GetRequisitesByRawAddress(ctx, "НОВОСИБИРСКАЯ ОБЛ, НОВОСИБИРСК Г, 10-Й ПОРТ-АРТУРСКИЙ ПЕР, Д 17")
+	addr, requsites, err = client.RequisitesByRawAddress(ctx, "НОВОСИБИРСКАЯ ОБЛ, НОВОСИБИРСК Г, 10-Й ПОРТ-АРТУРСКИЙ ПЕР, Д 17")
 	require.Nil(t, err)
 	assert.True(t, addr.FullName != "")
 	assert.True(t, requsites.Payee.Bank != "")
-	assert.Equal(t, client.GetFiasNumRequests(), 5)
+	assert.Equal(t, client.FiasNumRequests(), 5)
 }
 
-func TestClient_getFiasAddress(t *testing.T) {
+func TestClient_FiasAddress(t *testing.T) {
 	ctx := context.Background()
 	client := NewClient()
 
-	addrs, err := client.GetFiasAddresses(ctx, "Дагестан, село Леваши, с Леваши")
+	addrs, err := client.FiasAddresses(ctx, "Дагестан, село Леваши, с Леваши")
 	require.Nil(t, err)
 	assert.Equal(t, addrs[0].FullName, "Республика Дагестан, м.р-н Левашинский, с.п. село Леваши, с. Леваши")
-	assert.Equal(t, 2, client.GetFiasNumRequests())
+	assert.Equal(t, 2, client.FiasNumRequests())
 }
 
-func TestClient_GetRequisitesByRawAddress(t *testing.T) {
+func TestClient_RequisitesByRawAddress(t *testing.T) {
 	tests := []struct {
 		addr     string
 		wantBank string
@@ -314,7 +314,7 @@ func TestClient_GetRequisitesByRawAddress(t *testing.T) {
 			)
 
 			for i := 0; i < 3; i++ {
-				gotFAddr, gotR, err = c.GetRequisitesByRawAddress(ctx, tt.addr)
+				gotFAddr, gotR, err = c.RequisitesByRawAddress(ctx, tt.addr)
 				if err == nil ||
 					!strings.Contains(err.Error(), ": EOF") && !strings.Contains(err.Error(), "read: connection reset by peer") {
 					break
@@ -325,23 +325,23 @@ func TestClient_GetRequisitesByRawAddress(t *testing.T) {
 
 			if err != nil {
 				if !tt.wantErr {
-					t.Errorf("Client.GetRequisitesByRawAddress() error = %v, wantErr %v", err, tt.wantErr)
+					t.Errorf("Client.RequisitesByRawAddress() error = %v, wantErr %v", err, tt.wantErr)
 				}
 				return
 			}
 
 			if tt.wantBank != gotR.Payee.Bank {
-				t.Errorf("Client.GetRequisitesByRawAddress() gotBank = %v, want %v",
+				t.Errorf("Client.RequisitesByRawAddress() gotBank = %v, want %v",
 					gotR.Payee.Bank, tt.wantBank)
 			}
 
 			if tt.wantFias != gotFAddr.FullName {
-				t.Errorf("Client.GetRequisitesByRawAddress() gotFias = %v, want %v",
+				t.Errorf("Client.RequisitesByRawAddress() gotFias = %v, want %v",
 					gotFAddr.FullName, tt.wantFias)
 			}
 
 			if tt.wantIfns != gotFAddr.Info.AddressDetails.IfnsFl {
-				t.Errorf("Client.GetRequisitesByRawAddress() gotIfns = %v, want %v",
+				t.Errorf("Client.RequisitesByRawAddress() gotIfns = %v, want %v",
 					gotFAddr.Info.AddressDetails.IfnsFl, tt.wantIfns)
 			}
 		})

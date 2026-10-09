@@ -103,7 +103,7 @@ func NewDocument(number string, documentType string, dateIssue *time.Time) (d Do
 	return
 }
 
-//isOldFormat форматы типа IV-ЧП 000234
+// isOldFormat форматы типа IV-ЧП 000234
 func isOldFormat(number string) (bool, string) {
 	number = regexp.MustCompile(`(?si)[^a-zа-я0-9]+`).ReplaceAllString(number, "")
 
@@ -116,7 +116,7 @@ func isOldFormat(number string) (bool, string) {
 	return true, strings.ToUpper(m[1]) + "-" + strings.ToUpper(m[2]) + " " + m[3]
 }
 
-//isOther любые символы, но не более 25
+// isOther любые символы, но не более 25
 func isOther(number string) (bool, string) {
 	if utf8.RuneCountInString(number) > 25 {
 		return false, "Не более 25 символов."
@@ -125,7 +125,7 @@ func isOther(number string) (bool, string) {
 	return true, number
 }
 
-//isPassportRussia
+// isPassportRussia
 func isPassportRussia(number string) (bool, string) {
 	number = regexp.MustCompile(`[^0-9]+`).ReplaceAllString(number, "")
 	if len(number) != 10 {
