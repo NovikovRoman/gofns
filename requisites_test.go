@@ -3,7 +3,6 @@ package gofns
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -302,8 +301,7 @@ func TestClient_RequisitesByRawAddress(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	p, _ := url.Parse("http://g9530965:s9p4Bahpik@94.137.78.2:59100")
-	c := NewClient(WithProxy(p))
+	c := NewClient()
 
 	for _, tt := range tests {
 		t.Run(tt.addr, func(t *testing.T) {

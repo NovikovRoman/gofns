@@ -305,13 +305,13 @@ func (c *Client) Requisites(ctx context.Context, regionCode int, ifns string) (*
 	if err != nil {
 		return nil, err
 	}
-	if len(b) == 0 {
-		return nil, ErrBadResponse
-	}
 
 	var requisites *Requisites
 	if err = json.Unmarshal(b, &requisites); err != nil {
 		return nil, err
+	}
+	if requisites == nil {
+		return nil, ErrBadResponse
 	}
 
 	if requisites.Payee.Bank == "" {
@@ -324,7 +324,7 @@ func (c *Client) Requisites(ctx context.Context, regionCode int, ifns string) (*
 			err = ErrInspectionCode
 		}
 	}
-	return requisites, nil
+	return requisites, err
 }
 
 func (c *Client) getFiasToken(ctx context.Context) (err error) {

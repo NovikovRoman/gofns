@@ -123,7 +123,7 @@ func (c *Client) isUserActionRequired(ctx context.Context) (isAuthorize bool, er
 
 	// требуется действие пользователя
 	isAuthorize = regexp.
-		MustCompile(`(?i)id="personalData".+?Я даю согласие на обработку персональных данных`).Match(body)
+		MustCompile(`(?si)id="personalData".+?Я даю согласие на обработку персональных данных`).Match(body)
 	return
 }
 
