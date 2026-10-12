@@ -174,16 +174,22 @@ func (c *Client) LegalAddress(ctx context.Context, eg Egrul) (string, error) {
 		return "", errors.Join(ErrBadResponse, err)
 	}
 
-	p := r.Page(1)
-	if p.V.IsNull() || p.V.Key("Contents").Kind() == pdf.Null {
-		return "", fmt.Errorf("%w: пустая страница выписки", ErrBadResponse)
+	var m []string
+	var text string
+	for i := 1; i <= r.NumPage(); i++ {
+		p := r.Page(i)
+		if p.V.IsNull() || p.V.Key("Contents").Kind() == pdf.Null {
+			return "", fmt.Errorf("%w: пустая страница выписки", ErrBadResponse)
+		}
+		text, err = pageText(p)
+		if err != nil {
+			return "", errors.Join(ErrBadResponse, err)
+		}
+		m = reEgrulAddress.FindStringSubmatch(text)
+		if m != nil {
+			break
+		}
 	}
-	text, err := pageText(p)
-	if err != nil {
-		return "", errors.Join(ErrBadResponse, err)
-	}
-
-	m := reEgrulAddress.FindStringSubmatch(text)
 	if m == nil {
 		return "", ErrAddressNotFound
 	}
