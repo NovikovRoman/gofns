@@ -52,6 +52,7 @@ func TestClient_EgrulByInn(t *testing.T) {
 
 func TestClient_LegalAddress(t *testing.T) {
 	tests := []string{
+		"7743777777",
 		"7707056547",
 		"5904084719",
 		"1831038252",

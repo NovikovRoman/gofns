@@ -169,31 +169,38 @@ func (c *Client) LegalAddress(ctx context.Context, eg Egrul) (string, error) {
 		return "", errors.Join(ErrBadResponse, err)
 	}
 
+	return egrulAddressFromPDF(b)
+}
+
+// reEgrulPageFooter колонтитул страницы выписки: «Выписка из ЕГРЮЛ», дата, ОГРН, номер страницы
+var reEgrulPageFooter = regexp.MustCompile(`(?m)^\s*Выписка из ЕГРЮЛ\s*\n.*Страница\s+\d+\s+из.*$\n?`)
+
+// egrulAddressFromPDF извлекает адрес юрлица из pdf-выписки.
+// Страницы склеиваются без колонтитулов, т.к. адрес может переноситься на следующую страницу.
+func egrulAddressFromPDF(b []byte) (string, error) {
 	r, err := pdf.NewReaderEncrypted(bytes.NewReader(b), int64(len(b)), nil)
 	if err != nil {
 		return "", errors.Join(ErrBadResponse, err)
 	}
 
-	var m []string
-	var text string
+	var sb strings.Builder
 	for i := 1; i <= r.NumPage(); i++ {
 		p := r.Page(i)
 		if p.V.IsNull() || p.V.Key("Contents").Kind() == pdf.Null {
 			return "", fmt.Errorf("%w: пустая страница выписки", ErrBadResponse)
 		}
-		text, err = pageText(p)
+		text, err := pageText(p)
 		if err != nil {
 			return "", errors.Join(ErrBadResponse, err)
 		}
-		m = reEgrulAddress.FindStringSubmatch(text)
-		if m != nil {
-			break
+		sb.WriteString(reEgrulPageFooter.ReplaceAllString(text, ""))
+		sb.WriteByte('\n')
+
+		if m := reEgrulAddress.FindStringSubmatch(sb.String()); m != nil {
+			return strings.Join(strings.Fields(m[1]), " "), nil
 		}
 	}
-	if m == nil {
-		return "", ErrAddressNotFound
-	}
-	return strings.Join(strings.Fields(m[1]), " "), nil
+	return "", ErrAddressNotFound
 }
 
 // pageText собирает текст страницы построчно: фрагменты одной строки
