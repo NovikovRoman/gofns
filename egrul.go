@@ -131,7 +131,7 @@ func (c *Client) LegalAddress(ctx context.Context, eg Egrul) (string, error) {
 		select {
 		case <-ctx.Done():
 			return "", ctx.Err()
-		case <-time.After(time.Millisecond * 200):
+		case <-time.After(time.Millisecond * 500):
 		}
 
 		var statusResp struct {
